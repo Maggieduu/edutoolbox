@@ -1,0 +1,11 @@
+{
+  "games": [
+    { "folder": "Name1", "title": "🎮 五子棋大作战 🎮" },
+    { "folder": "Name2", "title": "🔬汉字大侦探" },
+    { "folder": "Name3", "title": "汉字大侦探 - Edu Toolbox" },
+    { "folder": "Name4", "title": "生词翻翻看 - Edu Toolbox" },
+    { "folder": "Name5", "title": "贪吃蛇大作战 - 升级版" },
+    { "folder": "Name6", "title": "Scrambled Sentence Game" },
+    { "folder": "Name7", "title": "🎯 随机点名器 🎯" }
+  ]
+}

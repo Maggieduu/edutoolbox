@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生词翻翻看 - Edu Toolbox</title>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700&family=Comic+Neue:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="xlsx.full.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rose: {
+                            800: '#7d1339',
+                            700: '#9e1b47',
+                            600: '#eb6d82',
+                            400: '#fba8ad',
+                        },
+                        primary: '#EC4899',
+                        secondary: '#8B5CF6',
+                        accent: '#F59E0B',
+                    },
+                    fontFamily: {
+                        heading: ['Baloo 2', 'cursive'],
+                        body: ['Comic Neue', 'cursive'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Comic Neue', cursive; background: #FDF2F8; }
+        h1, h2, h3, .font-heading { font-family: 'Baloo 2', cursive; }
+
+        .card {
+            width: 90px;
+            height: 90px;
+            background-color: #EC4899;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3), 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 18px;
+            background: #F59E0B;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .card.flipped { transform: rotateY(180deg); }
+        .card.matched {
+            animation: matchPulse 0.6s ease;
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.6), 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+        .card.matched::before { opacity: 1; }
+        .card-content {
+            backface-visibility: hidden;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 16px;
+        }
+        .card-back {
+            background: #EC4899;
+            color: #fff;
+            font-size: 28px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .card-front {
+            background: #ffffff;
+            color: #1D1D1F;
+            transform: rotateY(180deg);
+            font-size: 13px;
+            padding: 5px;
+            text-align: center;
+            word-break: break-word;
+            border: 2px solid #FCE7F3;
+        }
+        .card-front.chinese {
+            font-family: 'Baloo 2', cursive;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: #7d1339;
+        }
+        .card:hover {
+            transform: scale(1.08) rotate(1deg);
+            box-shadow: 0 8px 24px rgba(236, 72, 153, 0.4), 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .card.flipped:hover {
+            transform: rotateY(180deg) scale(1.05) rotate(-1deg);
+        }
+        @keyframes matchPulse {
+            0% { transform: rotateY(180deg) scale(1); }
+            50% { transform: rotateY(180deg) scale(1.15); }
+            100% { transform: rotateY(180deg) scale(1); }
+        }
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-100px) rotate(720deg); opacity: 0; }
+        }
+        .confetti-piece {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            animation: confetti 1s ease-out forwards;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        @media (max-width: 600px) {
+            .card { width: 70px; height: 70px; }
+            .card-front { font-size: 10px; }
+            .card-back { font-size: 22px; }
+        }
+        @media (max-width: 768px) {
+            #sidebar { width: 280px; }
+            #toggle-sidebar { right: 15px !important; }
+        }
+        #sidebar-overlay.opacity-100 { opacity: 1; }
+        #sidebar-overlay.opacity-0 { opacity: 0; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- 侧边栏切换按钮 -->
+    <button id="toggle-sidebar" onclick="toggleSidebar()" class="fixed top-4 right-4 bg-pink-500 text-white px-4 py-2 rounded-xl shadow-lg hover:bg-pink-600 z-[10000] cursor-pointer border-none transition-all duration-200 font-semibold flex items-center gap-2" style="font-family: 'Baloo 2', cursive;">
+        ⚙️ 设置
+    </button>
+
+    <!-- 返回按钮 -->
+    <a href="../../index.html" class="fixed top-4 left-4 bg-white px-5 py-2 rounded-lg shadow-md no-underline text-gray-700 font-medium z-[9999] flex items-center gap-2 hover:bg-gray-50">
+        <span>←</span> 返回工具箱
+    </a>
+
+    <!-- 右侧边栏 -->
+    <div id="sidebar" class="fixed top-0 right-0 w-72 h-screen bg-white shadow-[-4px_0_20px_rgba(0,0,0,0.15)] z-[9998] transition-transform duration-300 ease-out p-5 pt-20 overflow-y-auto translate-x-full">
+        <div id="sidebar-content">
+            <!-- 说明卡片 -->
+            <div id="instruction-panel" class="bg-pink-50 text-rose-800 p-5 rounded-2xl shadow-lg mb-6 border-2 border-pink-100">
+                <h2 class="text-lg font-bold text-center mb-3 flex items-center justify-center gap-2" style="font-family: 'Baloo 2', cursive;">
+                    📝 教师指南
+                </h2>
+                <ol class="list-decimal list-inside space-y-2 text-sm">
+                    <li><strong class="text-pink-600">准备 Excel：</strong>在 <b>A 列</b>放词汇，<b>B 列</b>放对应翻译</li>
+                    <li><strong class="text-pink-600">上传并生成：</strong>点击"上传 Excel 文件"，选择文件后点击"生成游戏"</li>
+                    <li><strong class="text-pink-600">分享给学生：</strong>复制生成的链接，发送给学生即可开始游戏！</li>
+                </ol>
+            </div>
+
+            <!-- 输入区域 -->
+            <div id="input-panel" class="flex flex-col gap-4 mb-6">
+                <label id="file-label" class="bg-white text-pink-600 px-5 py-3 rounded-xl shadow-md cursor-pointer hover:bg-pink-50 hover:scale-[1.02] transition-all duration-200 font-semibold border-2 border-pink-200 hover:border-pink-400 text-center block" style="font-family: 'Baloo 2', cursive;">
+                    <span id="file-label-text">📁 1. 上传 Excel 文件</span>
+                    <input type="file" id="excel-upload" accept=".xlsx, .xls" class="hidden" />
+                </label>
+                <button id="generate-game" class="bg-pink-500 text-white px-5 py-3 rounded-xl shadow-md hover:bg-pink-600 hover:scale-[1.02] transition-all duration-200 font-semibold border-2 border-transparent" style="font-family: 'Baloo 2', cursive;">
+                    ✨ 2. 生成游戏链接
+                </button>
+
+                <div class="flex items-center gap-2 mt-2">
+                    <label class="text-pink-600 font-semibold text-sm" style="font-family: 'Baloo 2', cursive;">卡牌图标:</label>
+                    <select id="icon-select" class="flex-1 bg-white text-pink-600 px-3 py-2 rounded-xl border-2 border-pink-200 font-semibold focus:outline-none focus:border-pink-400 cursor-pointer" style="font-family: 'Baloo 2', cursive;">
+                        <option value="🐾">🐾 爪子</option>
+                        <option value="⭐">⭐ 星星</option>
+                        <option value="❤️">❤️ 爱心</option>
+                        <option value="🎮">🎮 游戏</option>
+                        <option value="🚀">🚀 火箭</option>
+                        <option value="🌈">🌈 彩虹</option>
+                        <option value="🎨">🎨 画板</option>
+                        <option value="🔮">🔮 水晶球</option>
+                        <option value="🦄">🦄 独角兽</option>
+                        <option value="🍎">🍎 苹果</option>
+                    </select>
+                </div>
+                <div id="error-message" class="text-red-600 font-bold hidden bg-red-100 px-3 py-2 rounded-lg text-sm"></div>
+            </div>
+
+            <!-- 分享链接 -->
+            <div id="share-box" class="hidden bg-green-50 p-4 rounded-2xl shadow-md mb-6 text-center border-2 border-green-200">
+                <p class="text-green-600 font-bold mb-2 text-sm" style="font-family: 'Baloo 2', cursive;">🎉 游戏已创建！</p>
+                <p class="text-green-600 text-xs mb-2">分享这个链接给学生：</p>
+                <input type="text" id="share-url" readonly class="w-full px-3 py-2 rounded-lg border-2 border-green-200 text-xs mb-2 focus:outline-none focus:border-green-400" />
+                <button id="copy-link-btn" class="w-full bg-green-500 text-white px-4 py-2 rounded-xl shadow-md hover:bg-green-600 transition-all duration-200 font-semibold text-sm" style="font-family: 'Baloo 2', cursive;">
+                    📋 复制链接
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 侧边栏遮罩 -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/30 z-[9997] opacity-0 pointer-events-none transition-opacity duration-300"></div>
+
+    <!-- 主内容区域（游戏区） -->
+    <div class="min-h-screen p-16 transition-all duration-300">
+        <!-- 工具标题 -->
+        <div class="text-center pb-6">
+            <h1 class="text-4xl font-bold text-pink-600 mb-2" style="font-family: 'Baloo 2', cursive;">🃏 生词翻翻看</h1>
+            <p class="text-pink-400/80 text-lg" style="font-family: 'Comic Neue', cursive;">上传 Excel 文件，创建专属记忆卡牌游戏</p>
+        </div>
+
+        <!-- 统计 & 游戏按钮 -->
+        <div class="flex flex-col items-center gap-4 mb-6">
+            <div class="flex gap-6">
+                <div id="timer" class="bg-white/90 backdrop-blur-sm px-6 py-3 rounded-2xl shadow-lg font-bold text-pink-600 text-xl" style="font-family: 'Baloo 2', cursive;">
+                    ⏱️ 用时: 0秒
+                </div>
+                <div id="score" class="bg-white/90 backdrop-blur-sm px-6 py-3 rounded-2xl shadow-lg font-bold text-pink-600 text-xl" style="font-family: 'Baloo 2', cursive;">
+                    🎯 配对: 0 / 0
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <button id="shuffle-button" class="bg-pink-400 text-white px-6 py-3 rounded-xl shadow-lg hover:bg-pink-500 hover:scale-105 transition-all duration-200 font-semibold text-lg" style="font-family: 'Baloo 2', cursive;">
+                    🔀 重新洗牌
+                </button>
+                <button id="start-button" class="bg-purple-500 text-white px-6 py-3 rounded-xl shadow-lg hover:bg-purple-600 hover:scale-105 transition-all duration-200 font-semibold text-lg" style="font-family: 'Baloo 2', cursive;">
+                    ▶️ 开始游戏
+                </button>
+            </div>
+        </div>
+
+        <!-- 卡牌容器 -->
+        <div id="card-container" class="grid grid-cols-4 gap-4 w-full max-w-xl mx-auto justify-items-center"></div>
+
+        <!-- 成功消息 -->
+        <div id="success-message" class="hidden text-3xl font-bold text-pink-600 text-center mt-6 animate-bounce" style="font-family: 'Baloo 2', cursive;">
+            🎆 恭喜！你赢了！🎆
+        </div>
+
+        <!-- 底部说明 -->
+        <footer class="text-center py-8 text-pink-400/60 text-sm">
+            <p style="font-family: 'Baloo 2', cursive;">生词翻翻看 | Edu Toolbox</p>
+        </footer>
+    </div>
+
+    <script>
+        let wordPairs = [];
+        let selectedIcon = '🐾';
+        let timer = 0;
+        let timerInterval = null;
+        let matchedCards = 0;
+        let flippedCards = [];
+        let isFlipping = false;
+        let sidebarOpen = false;
+        let selectedFileName = '';
+
+        // Audio context for sound effects
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioCtx;
+        }
+        function playSound(type) {
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                if (type === 'correct') {
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
+                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                    osc.start(ctx.currentTime);
+                    osc.stop(ctx.currentTime + 0.4);
+                } else if (type === 'wrong') {
+                    osc.frequency.setValueAtTime(200, ctx.currentTime);
+                    osc.frequency.setValueAtTime(150, ctx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                    osc.start(ctx.currentTime);
+                    osc.stop(ctx.currentTime + 0.3);
+                } else if (type === 'win') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, i) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.15);
+                        g.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.15);
+                        g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.15 + 0.3);
+                        o.start(ctx.currentTime + i * 0.15);
+                        o.stop(ctx.currentTime + i * 0.15 + 0.3);
+                    });
+                }
+            } catch (e) { console.log('Audio error:', e); }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const toggleBtn = document.getElementById('toggle-sidebar');
+            sidebarOpen = !sidebarOpen;
+            if (sidebarOpen) {
+                sidebar.classList.remove('translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                overlay.classList.remove('opacity-0', 'pointer-events-none');
+                overlay.classList.add('opacity-100', 'pointer-events-auto');
+                toggleBtn.classList.add('right-80');
+                toggleBtn.innerHTML = '✕ 关闭';
+            } else {
+                sidebar.classList.remove('translate-x-0');
+                sidebar.classList.add('translate-x-full');
+                overlay.classList.remove('opacity-100', 'pointer-events-auto');
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+                toggleBtn.classList.remove('right-80');
+                toggleBtn.innerHTML = '⚙️ 设置';
+            }
+        }
+
+        function initGame() {
+            document.getElementById('generate-game').addEventListener('click', handleExcelUpload);
+            document.getElementById('shuffle-button').addEventListener('click', shuffleCards);
+            document.getElementById('start-button').addEventListener('click', startGame);
+            document.getElementById('copy-link-btn').addEventListener('click', copyShareLink);
+
+            // Simple file input tracking - update label text only
+            const fileInput = document.getElementById('excel-upload');
+            const fileLabelText = document.getElementById('file-label-text');
+            fileInput.addEventListener('change', function() {
+                selectedFileName = this.files[0] ? this.files[0].name : '';
+                const displayName = selectedFileName.length > 20 ? selectedFileName.substring(0, 20) + '...' : selectedFileName;
+                fileLabelText.textContent = selectedFileName ? '📁 ' + displayName : '📁 重新选择文件';
+            });
+
+            checkUrlForStudentData();
+        }
+
+        function checkUrlForStudentData() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const dataStr = urlParams.get('data');
+            if (dataStr) {
+                try {
+                    // Hide sidebar and toggle button for students
+                    document.getElementById('sidebar').style.display = 'none';
+                    document.getElementById('toggle-sidebar').style.display = 'none';
+                    document.getElementById('sidebar-overlay').style.display = 'none';
+                    document.getElementById('sidebar-content').style.display = 'none';
+
+                    document.querySelector('h1').textContent = "🏃 开始游戏吧！";
+                    document.querySelector('h1').style.fontFamily = "'Baloo 2', cursive";
+                    const subtitle = document.querySelector('div.text-center.pb-6 p');
+                    if (subtitle) subtitle.textContent = "找出所有配对的词汇吧！";
+
+                    const decoded = decodeURIComponent(atob(dataStr));
+                    const parsed = JSON.parse(decoded);
+                    selectedIcon = parsed.icon || '🐾';
+                    wordPairs = parsed.wordPairs.map((arr, index) => ({ english: arr[0], chinese: arr[1], pairId: index }));
+
+                    initCards();
+                    updateScoreDisplay();
+                } catch (e) {
+                    showError("无效的游戏链接，请联系老师获取新链接。");
+                }
+            }
+        }
+
+        function createShareLink() {
+            try {
+                selectedIcon = document.getElementById('icon-select').value;
+                const payload = { wordPairs: wordPairs.map(p => [p.english, p.chinese]), icon: selectedIcon };
+                const encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
+                const shareUrl = window.location.origin + window.location.pathname + '?data=' + encoded;
+
+                document.getElementById('share-box').style.display = 'block';
+                document.getElementById('share-url').value = shareUrl;
+            } catch(e) {
+                console.error("链接生成失败，可能内容过多。");
+            }
+        }
+
+        function copyShareLink() {
+            const copyText = document.getElementById("share-url");
+            copyText.select();
+            document.execCommand("copy");
+            const btn = document.getElementById('copy-link-btn');
+            btn.textContent = "✅ 已复制！";
+            setTimeout(() => btn.textContent = "📋 复制链接", 2000);
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('score').innerHTML = `🎯 配对: ${matchedCards / 2} / ${wordPairs.length}`;
+        }
+
+        function handleExcelUpload() {
+            const fileInput = document.getElementById('excel-upload');
+            const file = fileInput.files[0];
+            console.log("文件选择:", file, "文件名:", selectedFileName);
+            if (!file) { showError("请先上传 Excel 文件。"); return; }
+
+            console.log("读取文件:", file.name);
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                console.log("FileReader 完成, result type:", typeof e.target.result);
+                try {
+                    if (typeof XLSX === 'undefined') {
+                        showError("Excel 库加载失败，请刷新页面重试。");
+                        return;
+                    }
+                    console.log("开始解析 Excel...");
+                    const workbook = XLSX.read(e.target.result, { type: 'array' });
+                    console.log("Excel 解析完成, sheets:", workbook.SheetNames);
+                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+                    console.log("解析到数据行数:", jsonData.length);
+
+                    wordPairs = [];
+                    jsonData.forEach(row => {
+                        if (row.length >= 2 && row[0] && row[1]) {
+                            wordPairs.push({ english: String(row[0]).trim(), chinese: String(row[1]).trim(), pairId: wordPairs.length });
+                        }
+                    });
+                    console.log("有效词汇配对数:", wordPairs.length);
+
+                    if (wordPairs.length < 1) { showError("没有找到有效的词汇配对。"); return; }
+                    if (wordPairs.length > 8) { showError("最多只能添加 8 个词汇配对（4x4=16张卡牌）。"); return; }
+
+                    hideError();
+                    initCards();
+                    updateScoreDisplay();
+                    createShareLink();
+                    console.log("游戏生成完成!");
+                } catch (error) {
+                    console.error("Excel 读取错误:", error);
+                    showError("读取 Excel 文件出错：" + error.message);
+                }
+            };
+            reader.onerror = function(e) {
+                console.error("FileReader 错误:", e);
+                showError("文件读取失败。");
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error-message');
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+        function hideError() {
+            document.getElementById('error-message').style.display = 'none';
+        }
+
+        function initCards() {
+            const container = document.getElementById('card-container');
+            container.innerHTML = '';
+            const cards = [];
+            wordPairs.forEach(pair => {
+                cards.push({ content: pair.english, pairId: pair.pairId, isChinese: false });
+                cards.push({ content: pair.chinese, pairId: pair.pairId, isChinese: true });
+            });
+            shuffleArray(cards).forEach((cardData, index) => {
+                const card = document.createElement('div');
+                card.className = 'card flipped';
+                card.dataset.pairId = cardData.pairId;
+                card.setAttribute('role', 'button');
+                card.setAttribute('aria-label', `卡牌 ${index + 1}，点击翻转`);
+                card.setAttribute('tabindex', '0');
+                card.innerHTML = `<div class="card-content card-back" aria-hidden="true">${selectedIcon}</div><div class="card-content card-front ${cardData.isChinese ? 'chinese' : ''}">${cardData.content}</div>`;
+                card.addEventListener('click', handleCardClick);
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleCardClick(e);
+                    }
+                });
+                container.appendChild(card);
+            });
+        }
+
+        function shuffleCards() {
+            if (wordPairs.length === 0) return;
+            initCards();
+            document.getElementById('success-message').style.display = 'none';
+            matchedCards = 0;
+            updateScoreDisplay();
+            clearInterval(timerInterval);
+            timer = 0;
+            document.getElementById('timer').innerHTML = '⏱️ 用时: 0秒';
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function handleCardClick(e) {
+            if (isFlipping) return;
+            const card = e.target.closest('.card');
+            if (!card || card.classList.contains('flipped') || flippedCards.includes(card)) return;
+
+            card.classList.add('flipped');
+            flippedCards.push(card);
+            if (flippedCards.length === 2) {
+                isFlipping = true;
+                checkMatch(flippedCards[0], flippedCards[1]);
+            }
+        }
+
+        function checkMatch(card1, card2) {
+            if (card1.dataset.pairId === card2.dataset.pairId) {
+                matchedCards += 2;
+                playSound('correct');
+                // Add matched animation
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                setTimeout(() => {
+                    card1.classList.remove('matched');
+                    card2.classList.remove('matched');
+                }, 600);
+
+                flippedCards = [];
+                isFlipping = false;
+                updateScoreDisplay();
+                checkWin();
+            } else {
+                playSound('wrong');
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    flippedCards = [];
+                    isFlipping = false;
+                }, 1000);
+            }
+        }
+
+        function checkWin() {
+            if (matchedCards === wordPairs.length * 2) {
+                clearInterval(timerInterval);
+                playSound('win');
+                document.getElementById('success-message').style.display = 'block';
+                document.querySelectorAll('.card').forEach(c => c.style.pointerEvents = 'none');
+                // Trigger confetti!
+                createConfetti();
+            }
+        }
+
+        function createConfetti() {
+            const colors = ['#EC4899', '#8B5CF6', '#F59E0B', '#10B981', '#3B82F6', '#EF4444'];
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti-piece';
+                confetti.style.left = Math.random() * window.innerWidth + 'px';
+                confetti.style.top = Math.random() * window.innerHeight * 0.5 + window.innerHeight * 0.3 + 'px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.transform = 'rotate(' + Math.random() * 360 + 'deg)';
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 1500);
+            }
+        }
+
+        function startGame() {
+            if (wordPairs.length === 0) return;
+            document.querySelectorAll('.card').forEach(c => { c.style.pointerEvents = 'auto'; c.classList.remove('flipped'); });
+            clearInterval(timerInterval);
+            timer = 0;
+            timerInterval = setInterval(() => {
+                timer++;
+                document.getElementById('timer').innerHTML = `⏱️ 用时: ${timer}秒`;
+            }, 1000);
+        }
+
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>

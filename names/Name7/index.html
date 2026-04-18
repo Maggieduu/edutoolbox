@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 随机点名器 🎯</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            min-height: 100vh;
+            background: #EFF6FF;
+            padding: 20px;
+        }
+
+        /* 背景装饰 */
+        .bg-stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .bg-star {
+            position: absolute;
+            color: #BFDBFE;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-decoration: none;
+            color: #555;
+            font-weight: 600;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        .back-btn:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 50px;
+            align-items: flex-start;
+        }
+
+        /* 左侧区域 - 输入框（窄） */
+        .left-panel {
+            flex: 0 0 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* 右侧区域 - 胶囊机（宽，焦点） */
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+        /* 标题 */
+        h1 {
+            color: white;
+            font-size: 32px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        /* 输入区域 */
+        .input-section {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(37, 99, 235, 0.12);
+            border: 2px solid #BFDBFE;
+        }
+
+        .input-label {
+            color: #1E40AF;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            border: 2px solid #BFDBFE;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            resize: none;
+            transition: all 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #2563EB;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+
+        .hint {
+            color: #94A3B8;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .spin-btn {
+            flex: 1;
+            background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            font-size: 17px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+            transition: all 0.3s;
+        }
+        .spin-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+        }
+        .spin-btn:disabled {
+            background: #94A3B8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .reset-btn {
+            background: white;
+            color: #2563EB;
+            border: 2px solid #2563EB;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .reset-btn:hover {
+            background: #2563EB;
+            color: white;
+        }
+
+        .wheel-title {
+            display: none;
+        }
+
+        .capsule-machine {
+            position: relative;
+            width: 260px;
+            height: 320px;
+        }
+
+        /* 胶囊机顶部 */
+        .machine-top {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 40px;
+            background: linear-gradient(135deg, #2563EB, #3B82F6);
+            border-radius: 40px 40px 0 0;
+            z-index: 10;
+        }
+
+        .machine-top::after {
+            content: ' ';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 26px;
+            height: 26px;
+            background: #F59E0B;
+            border-radius: 50%;
+            box-shadow: inset 0 3px 6px rgba(0,0,0,0.2);
+        }
+
+        /* 胶囊机发光效果 */
+        .capsule-machine {
+            position: relative;
+            width: 320px;
+            height: 400px;
+            filter: drop-shadow(0 0 30px rgba(37, 99, 235, 0.3));
+            transition: filter 0.3s;
+        }
+        .capsule-machine.active {
+            filter: drop-shadow(0 0 60px rgba(37, 99, 235, 0.6));
+        }
+
+        .capsule-machine.shake {
+            animation: machineShake 0.5s ease-in-out;
+        }
+
+        @keyframes machineShake {
+            0%, 100% { transform: translateX(0); }
+            10% { transform: translateX(-4px) rotate(-1deg); }
+            20% { transform: translateX(4px) rotate(1deg); }
+            30% { transform: translateX(-4px) rotate(-1deg); }
+            40% { transform: translateX(4px) rotate(1deg); }
+            50% { transform: translateX(-3px); }
+            60% { transform: translateX(3px); }
+            70% { transform: translateX(-2px); }
+            80% { transform: translateX(2px); }
+            90% { transform: translateX(0); }
+        }
+
+        /* 透明圆顶 */
+        .dome {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.6));
+            border: 10px solid #2563EB;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: inset 0 0 40px rgba(37,99,235,0.15), 0 0 30px rgba(0,0,0,0.1);
+        }
+
+        /* 名字气泡 */
+        .name-bubble {
+            position: absolute;
+            background: linear-gradient(135deg, #2563EB, #3B82F6);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            transition: transform 0.05s linear;
+        }
+
+        /* 掉落胶囊 */
+        .dropping-capsule {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            margin-left: -45px;
+            width: 90px;
+            height: 55px;
+            background: linear-gradient(135deg, #2563EB, #3B82F6);
+            border-radius: 40px 40px 12px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+            z-index: 20;
+            opacity: 0;
+            transform: scale(0);
+        }
+
+        .dropping-capsule.sway {
+            animation: capsuleSway 0.6s ease-out forwards;
+        }
+
+        @keyframes capsuleSway {
+            0% { transform: scale(0.5) rotate(-15deg); }
+            50% { transform: scale(1.1) rotate(8deg); }
+            75% { transform: scale(0.95) rotate(-4deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        /* 胶囊机底座 */
+        .machine-base {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 260px;
+            height: 80px;
+            background: linear-gradient(135deg, #2563EB, #3B82F6);
+            border-radius: 15px 15px 25px 25px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+        }
+
+        .machine-base::before {
+            content: 'OUT';
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .slot {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90px;
+            height: 12px;
+            background: #1E40AF;
+            border-radius: 6px;
+        }
+
+        /* 转盘区域 */
+        .wheel-section {
+            background: white;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 15px 50px rgba(37, 99, 235, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 420px;
+            border: 3px solid #BFDBFE;
+        }
+
+        .remaining-count {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #64748B;
+        }
+        .remaining-count span {
+            font-weight: bold;
+            color: #2563EB;
+        }
+
+        /* 滚动动画 - 速度递减效果由 JS 控制 */
+
+        /* 结果显示 - 隐藏，因为用弹窗展示 */
+        .result-section {
+            display: none;
+        }
+
+        /* 已选中记录 */
+        .history-section {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(37, 99, 235, 0.12);
+            flex: 1;
+            border: 2px solid #BFDBFE;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .history-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1E40AF;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-count {
+            background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+            color: white;
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .history-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .history-item::before {
+            content: '✓';
+            font-size: 12px;
+        }
+
+        .history-empty {
+            color: #94A3B8;
+            font-size: 14px;
+            text-align: center;
+            padding: 40px;
+        }
+
+        /* 弹窗 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(37, 99, 235, 0.4);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 24px;
+            padding: 30px;
+            max-width: 340px;
+            width: 90%;
+            text-align: center;
+            border: 3px solid #BFDBFE;
+            box-shadow: 0 20px 60px rgba(37, 99, 235, 0.3);
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.1); }
+            70% { transform: scale(0.95); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal {
+            background: white;
+            border-radius: 28px;
+            padding: 35px 40px;
+            max-width: 380px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.35);
+            animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .modal-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+            animation: bounce 0.6s ease infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .modal-title {
+            font-size: 16px;
+            color: #64748B;
+            margin-bottom: 8px;
+        }
+
+        .modal-name {
+            font-size: 42px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #2563EB 0%, #EC4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: textGlow 1.5s ease-in-out infinite;
+            margin: 10px 0 20px;
+        }
+
+        @keyframes textGlow {
+            0%, 100% { filter: drop-shadow(0 0 8px rgba(37, 99, 235, 0.4)); }
+            50% { filter: drop-shadow(0 0 20px rgba(236, 72, 153, 0.5)); }
+        }
+
+        .modal-text {
+            color: #64748B;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        .modal-btns {
+            display: flex;
+            gap: 15px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 16px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .modal-btn.remove {
+            background: linear-gradient(135deg, #EC4899 0%, #F472B6 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.4);
+        }
+        .modal-btn.remove:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(236, 72, 153, 0.5);
+        }
+
+        .modal-btn.keep {
+            background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+        }
+        .modal-btn.keep:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+        }
+
+        /* 彩带效果 */
+        .confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            overflow: hidden;
+        }
+        .confetti-piece, .streamer, .star {
+            position: absolute;
+        }
+        .confetti-piece {
+            animation: confettiFall 3s ease-out forwards;
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(-50px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        .streamer {
+            top: -30px;
+            width: 12px;
+            height: 60px;
+            border-radius: 5px;
+            animation: streamerFall 2.5s ease-out forwards;
+        }
+        @keyframes streamerFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+        }
+        .star {
+            font-size: 20px;
+            animation: starBurst 1.5s ease-out forwards;
+        }
+        @keyframes starBurst {
+            0% { transform: scale(0) rotate(0deg); opacity: 1; }
+            50% { transform: scale(1.5) rotate(180deg); opacity: 1; }
+            100% { transform: scale(0) rotate(360deg); opacity: 0; }
+        }
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            animation: particleFloat 2s ease-out forwards;
+        }
+        @keyframes particleFloat {
+            0% { transform: scale(1) translate(0, 0); opacity: 1; }
+            100% { transform: scale(0) translate(var(--tx), var(--ty)); opacity: 0; }
+        }
+
+        /* 手机适配 */
+        @media (max-width: 768px) {
+            .main-layout {
+                flex-direction: column-reverse;
+                padding-top: 60px;
+            }
+            .left-panel {
+                flex: none;
+                width: 100%;
+            }
+            .right-panel {
+                flex: none;
+                width: 100%;
+                align-items: center;
+            }
+            .wheel-section {
+                max-width: 100%;
+            }
+            .capsule-machine {
+                width: 260px;
+                height: 320px;
+            }
+            .dome {
+                width: 240px;
+                height: 240px;
+            }
+            .back-btn {
+                padding: 8px 14px;
+                font-size: 13px;
+            }
+            h1 { font-size: 26px; }
+            .result-name { font-size: 36px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-stars" id="bgStars"></div>
+    <h1>🎯 随机点名器 🎯</h1>
+
+    <div class="main-layout">
+        <!-- 左侧：输入 + 历史记录 -->
+        <div class="left-panel">
+            <div class="input-section">
+                <label class="input-label">输入学生姓名（每行一个）</label>
+                <textarea id="namesInput" placeholder="张三&#10;李四&#10;王五&#10;赵六&#10;..."></textarea>
+                <div class="hint">每行一个姓名，输入完成后点击"开始点名"</div>
+                <div class="btn-row">
+                    <button class="spin-btn" id="spinBtn" onclick="startSpin()">🎲 开始点名</button>
+                    <button class="reset-btn" onclick="resetAll()">重置</button>
+                </div>
+            </div>
+
+            <div class="history-section">
+                <div class="history-header">
+                    <div class="history-title">
+                        已选中的同学
+                        <span class="history-count" id="historyCount">0</span>
+                    </div>
+                </div>
+                <div class="history-list" id="historyList">
+                    <div class="history-empty">还没有同学被选中</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：胶囊机 -->
+        <div class="right-panel">
+            <div class="wheel-section">
+                <div class="capsule-machine" id="capsuleMachine">
+                    <div class="machine-top"></div>
+                    <div class="dome" id="dome"></div>
+                    <div class="dropping-capsule" id="droppingCapsule"></div>
+                    <div class="machine-base">
+                        <div class="slot"></div>
+                    </div>
+                </div>
+                <div class="remaining-count">剩余 <span id="remainingCount">0</span> 人</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <div class="modal-icon">🎊</div>
+            <div class="modal-title">恭喜这位同学</div>
+            <div class="modal-name" id="modalName"></div>
+            <div class="modal-text">是否把这位同学从点名池中移除？</div>
+            <div class="modal-btns">
+                <button class="modal-btn keep" onclick="keepPerson()">保留</button>
+                <button class="modal-btn remove" onclick="removePerson()">移除</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allNames = [];
+        let remainingNames = [];
+        let selectedName = '';
+        let isSpinning = false;
+        let currentRotation = 0;
+        let selectedHistory = [];
+
+        // 颜色数组
+        const colors = [
+            '#2563EB', '#F59E0B', '#EC4899', '#10B981',
+            '#8B5CF6', '#EF4444', '#06B6D4', '#F97316',
+            '#84CC16', '#D946EF', '#6366F1', '#14B8A6'
+        ];
+
+        // 创建背景星星
+        function createBgStars() {
+            const container = document.getElementById('bgStars');
+            const emojis = ['⭐', '✨', '🌟', '💫'];
+            for (let i = 0; i < 20; i++) {
+                const star = document.createElement('div');
+                star.className = 'bg-star';
+                star.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.fontSize = (Math.random() * 15 + 10) + 'px';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                container.appendChild(star);
+            }
+        }
+        createBgStars();
+
+        function startSpin() {
+            const input = document.getElementById('namesInput').value.trim();
+
+            if (!input) {
+                alert('请输入学生姓名！');
+                return;
+            }
+
+            if (remainingNames.length === 0) {
+                allNames = input.split('\n').filter(n => n.trim());
+                remainingNames = [...allNames];
+                selectedHistory = [];
+                updateHistory();
+            }
+
+            if (remainingNames.length < 2) {
+                alert('点名池中至少需要2个学生！');
+                return;
+            }
+
+            if (isSpinning) return;
+            isSpinning = true;
+
+            const btn = document.getElementById('spinBtn');
+            btn.disabled = true;
+            btn.textContent = '🎡 转动中...';
+
+            // 隐藏之前的胶囊
+            const droppingCapsule = document.getElementById('droppingCapsule');
+            droppingCapsule.classList.remove('show', 'sway');
+            droppingCapsule.style.opacity = '0';
+            droppingCapsule.style.transform = 'scale(0)';
+
+            // 生成名字气泡
+            generateWheel();
+
+            // 随机选择
+            const randomIndex = Math.floor(Math.random() * remainingNames.length);
+            selectedName = remainingNames[randomIndex];
+
+            // 开始滚动动画
+            const dome = document.getElementById('dome');
+            const machine = document.getElementById('capsuleMachine');
+            machine.classList.add('active');
+
+            // 简单左右摇摆动画
+            const maxDuration = 2000;
+            const startTime = Date.now();
+            let wobbleAngle = 0;
+
+            function animateRoll() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / maxDuration, 1);
+
+                // 摇摆角度递减
+                wobbleAngle = 15 * (1 - progress);
+                const wobbleX = Math.sin(Date.now() / 100) * wobbleAngle;
+
+                const bubbles = dome.querySelectorAll('.name-bubble');
+                bubbles.forEach((bubble, i) => {
+                    const baseY = parseFloat(bubble.dataset.baseY) || 0;
+                    const offsetY = Math.sin((Date.now() / 150) + i * 0.5) * 8;
+                    bubble.style.transform = `translate(${wobbleX}px, ${baseY + offsetY}px)`;
+                });
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateRoll);
+                } else {
+                    // 动画结束，重置气泡
+                    bubbles.forEach(bubble => {
+                        bubble.style.transform = '';
+                    });
+                }
+            }
+            animateRoll();
+
+            setTimeout(() => {
+                // 停止滚动
+                machine.classList.remove('active');
+                machine.classList.add('shake');
+
+                setTimeout(() => machine.classList.remove('shake'), 500);
+
+                // 显示掉落的胶囊
+                droppingCapsule.textContent = selectedName;
+                droppingCapsule.style.opacity = '1';
+                droppingCapsule.style.transform = 'scale(1)';
+                droppingCapsule.classList.add('sway');
+
+                setTimeout(() => {
+                    showResult();
+                    isSpinning = false;
+                    btn.disabled = false;
+                    btn.textContent = '🎲 继续点名';
+                }, 600);
+            }, maxDuration);
+        }
+
+        function generateWheel() {
+            const dome = document.getElementById('dome');
+            const n = remainingNames.length;
+            dome.innerHTML = '';
+
+            const fontSize = n > 20 ? 9 : (n > 15 ? 10 : (n > 10 ? 12 : 14));
+
+            remainingNames.forEach((name, i) => {
+                const bubble = document.createElement('div');
+                bubble.className = 'name-bubble';
+                bubble.textContent = name;
+                bubble.style.fontSize = fontSize + 'px';
+
+                // 随机位置分布 - 基于更大的圆顶
+                const angle = (i / n) * Math.PI * 2;
+                const radius = 60 + Math.random() * 50;
+                const x = 150 + Math.cos(angle) * radius - 30;
+                const y = 150 + Math.sin(angle) * radius - 15;
+
+                bubble.style.left = x + 'px';
+                bubble.style.top = y + 'px';
+                bubble.dataset.baseY = 0;
+                bubble.style.animation = 'none'; // 禁用浮动动画，JS控制
+                bubble.style.background = `linear-gradient(135deg, ${colors[i % colors.length]}, ${colors[(i + 1) % colors.length]})`;
+
+                dome.appendChild(bubble);
+            });
+
+            document.getElementById('remainingCount').textContent = n;
+        }
+
+        function showResult() {
+            createConfetti();
+            setTimeout(() => {
+                showModal();
+            }, 300);
+        }
+
+        function showModal() {
+            document.getElementById('modalName').textContent = selectedName;
+            document.getElementById('modal').classList.add('show');
+        }
+
+        function hideModal() {
+            document.getElementById('modal').classList.remove('show');
+        }
+
+        function keepPerson() {
+            selectedHistory.push(selectedName);
+            updateHistory();
+            hideModal();
+        }
+
+        function removePerson() {
+            remainingNames = remainingNames.filter(n => n !== selectedName);
+            selectedHistory.push(selectedName);
+            updateHistory();
+            hideModal();
+
+            // 重新生成转盘
+            if (remainingNames.length > 1) {
+                generateWheel();
+            }
+
+            if (remainingNames.length === 1) {
+                setTimeout(() => {
+                    alert('只剩一个学生了！' + remainingNames[0] + ' 是最后一位！');
+                }, 300);
+            }
+        }
+
+        function updateHistory() {
+            const historyList = document.getElementById('historyList');
+            const historyCount = document.getElementById('historyCount');
+
+            historyCount.textContent = selectedHistory.length;
+
+            if (selectedHistory.length === 0) {
+                historyList.innerHTML = '<div class="history-empty">还没有同学被选中</div>';
+            } else {
+                historyList.innerHTML = selectedHistory.map((item, index) =>
+                    `<div class="history-item">第${index + 1}次: ${item}</div>`
+                ).join('');
+            }
+        }
+
+        function resetAll() {
+            const input = document.getElementById('namesInput').value.trim();
+            if (!input) {
+                alert('请先输入学生姓名！');
+                return;
+            }
+
+            allNames = input.split('\n').filter(n => n.trim());
+            remainingNames = [...allNames];
+            selectedHistory = [];
+            currentRotation = 0;
+
+            // 隐藏胶囊
+            document.getElementById('droppingCapsule').classList.remove('show');
+
+            document.getElementById('resultSection').classList.remove('show');
+            document.getElementById('spinBtn').textContent = '🎲 开始点名';
+
+            updateHistory();
+            generateWheel();
+        }
+
+        function createConfetti() {
+            const container = document.createElement('div');
+            container.className = 'confetti';
+            document.body.appendChild(container);
+
+            const colorsArr = ['#2563EB', '#F59E0B', '#EC4899', '#10B981', '#8B5CF6', '#EF4444'];
+            const emojis = ['⭐', '🌟', '✨', '💫', '🎊', '🎉'];
+
+            // 彩带
+            for (let i = 0; i < 20; i++) {
+                const s = document.createElement('div');
+                s.className = 'streamer';
+                s.style.left = Math.random() * 100 + '%';
+                s.style.backgroundColor = colorsArr[Math.floor(Math.random() * colorsArr.length)];
+                s.style.animationDelay = Math.random() * 0.5 + 's';
+                s.style.opacity = 0.8;
+                container.appendChild(s);
+            }
+
+            // 彩色纸片
+            for (let i = 0; i < 80; i++) {
+                const p = document.createElement('div');
+                p.className = 'confetti-piece';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.backgroundColor = colorsArr[Math.floor(Math.random() * colorsArr.length)];
+                p.style.animationDelay = Math.random() * 0.4 + 's';
+                p.style.width = Math.random() * 10 + 5 + 'px';
+                p.style.height = Math.random() * 15 + 8 + 'px';
+                p.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                p.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                container.appendChild(p);
+            }
+
+            // 星星爆发效果
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 3;
+            for (let i = 0; i < 12; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                const angle = (i / 12) * Math.PI * 2;
+                const distance = 100 + Math.random() * 150;
+                star.style.left = centerX + 'px';
+                star.style.top = centerY + 'px';
+                star.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
+                star.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
+                star.style.animationDelay = Math.random() * 0.3 + 's';
+                container.appendChild(star);
+            }
+
+            // 中心粒子爆发
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                const size = Math.random() * 8 + 4;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.backgroundColor = colorsArr[Math.floor(Math.random() * colorsArr.length)];
+                particle.style.left = centerX + 'px';
+                particle.style.top = centerY + 'px';
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 80 + Math.random() * 200;
+                particle.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
+                particle.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
+                particle.style.animationDelay = Math.random() * 0.2 + 's';
+                container.appendChild(particle);
+            }
+
+            setTimeout(() => container.remove(), 4000);
+        }
+    </script>
+</body>
+</html>
