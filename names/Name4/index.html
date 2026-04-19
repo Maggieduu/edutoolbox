@@ -257,6 +257,40 @@
         let sidebarOpen = false;
         let selectedFileName = '';
 
+        // 页面加载时检查 localStorage 是否有模板
+        document.addEventListener('DOMContentLoaded', function() {
+            const templateData = localStorage.getItem('currentTemplate');
+            if (templateData) {
+                try {
+                    const template = JSON.parse(templateData);
+                    if (template.content && template.content.pairs) {
+                        // 转换数据格式：red -> english, blue -> chinese
+                        wordPairs = template.content.pairs.map((pair, index) => ({
+                            english: pair.red,
+                            chinese: pair.blue,
+                            pairId: index
+                        }));
+                        
+                        // Hide sidebar and toggle button for students
+                        document.getElementById('sidebar').style.display = 'none';
+                        document.getElementById('toggle-sidebar').style.display = 'none';
+                        document.getElementById('sidebar-overlay').style.display = 'none';
+                        document.getElementById('sidebar-content').style.display = 'none';
+
+                        document.querySelector('h1').textContent = `📋 ${template.title}`;
+                        document.querySelector('h1').style.fontFamily = "'Baloo 2', cursive";
+                        const subtitle = document.querySelector('div.text-center.pb-6 p');
+                        if (subtitle) subtitle.textContent = "找出所有配对的词汇吧！";
+
+                        initCards();
+                        updateScoreDisplay();
+                    }
+                } catch (e) {
+                    console.error('解析模板失败', e);
+                }
+            }
+        });
+
         // Audio context for sound effects
         let audioCtx = null;
         function getAudioContext() {

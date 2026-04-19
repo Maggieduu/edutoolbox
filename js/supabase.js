@@ -89,13 +89,6 @@ async function handleRegister() {
         errorEl.textContent = '注册失败：' + error.message;
     } else {
         currentUser = data.user;
-        if (data.user) {
-            const { error: dbError } = await window.sb.from('users').insert({
-                id: data.user.id,
-                email: data.user.email,
-                created_at: new Date().toISOString()
-            });
-        }
         updateLoginButton();
         closeLoginModal();
     }
@@ -124,22 +117,39 @@ function toggleUserMenu(e) {
     }
     const menu = document.createElement('div');
     menu.id = 'userDropdown';
-    menu.className = 'fixed bg-white rounded-xl shadow-xl border-2 border-gray-200 py-2 min-w-[180px] z-50';
+    menu.className = 'fixed bg-white rounded-xl shadow-xl border border-gray-200 py-2 min-w-[200px] z-50';
     menu.style.top = '70px';
     menu.style.right = '20px';
     menu.innerHTML = `
         <div class="px-4 py-2 border-b border-gray-100">
-            <p class="text-sm text-gray-500">已登录</p>
+            <p class="text-xs text-gray-500 mb-1">已登录</p>
             <p class="font-semibold text-gray-800 truncate">${currentUser.email}</p>
         </div>
-        <a href="#" onclick="showMyProfile()" class="block px-4 py-3 hover:bg-orange-50 text-gray-700 transition-colors">
-            👤 My Profile
+        <a href="my-uploads.html" class="block px-5 py-3 hover:bg-blue-50 text-gray-700 transition-colors">
+            <span class="flex items-center gap-3">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 19V5M5 12l7-7 7 7"/>
+                </svg>
+                我的上传
+            </span>
         </a>
-        <a href="my-favorites.html" class="block px-4 py-3 hover:bg-orange-50 text-gray-700 transition-colors">
-            ⭐ 我的收藏
+        <a href="my-favorites.html" class="block px-5 py-3 hover:bg-orange-50 text-gray-700 transition-colors">
+            <span class="flex items-center gap-3">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+                我的收藏
+            </span>
         </a>
-        <a href="#" onclick="handleLogout()" class="block px-4 py-3 hover:bg-red-50 text-red-600 transition-colors">
-            🚪 Log Out
+        <a href="#" onclick="handleLogout()" class="block px-5 py-3 hover:bg-red-50 text-red-600 transition-colors border-t border-gray-100">
+            <span class="flex items-center gap-3">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16,17,21,12,16,7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Log Out
+            </span>
         </a>
     `;
     document.body.appendChild(menu);
@@ -152,52 +162,6 @@ function closeUserMenu() {
     document.removeEventListener('click', closeUserMenu);
 }
 
-function showMyProfile() {
-    closeUserMenu();
-    const modal = document.createElement('div');
-    modal.id = 'profileModal';
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
-    modal.innerHTML = `
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div class="bg-gradient-to-r from-orange-500 to-pink-500 rounded-t-2xl px-6 py-4">
-                <h3 class="text-white text-xl font-bold">👤 My Profile</h3>
-            </div>
-            <form id="profile-form" class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">显示名称</label>
-                    <input type="text" id="profile-name" value="${currentUser.email.split('@')[0]}" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">邮箱</label>
-                    <input type="email" value="${currentUser.email}" disabled class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-100 text-gray-500">
-                    <p class="text-xs text-gray-500 mt-1">邮箱无法修改</p>
-                </div>
-                <button type="submit" class="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold py-3 px-6 rounded-xl hover:from-orange-600 hover:to-pink-600 transition-all shadow-lg">
-                    保存修改
-                </button>
-            </form>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.remove();
-    });
-    document.getElementById('profile-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const newName = document.getElementById('profile-name').value.trim();
-        if (newName) {
-            updateLoginButtonDisplay(newName);
-            modal.remove();
-            alert('Profile updated!');
-        }
-    };
-}
-
-function updateLoginButtonDisplay(name) {
-    const loginBtn = document.querySelector('.login-btn');
-    if (loginBtn) loginBtn.textContent = name;
-}
-
 async function handleLogout() {
     closeUserMenu();
     const { error } = await window.sb.auth.signOut();
@@ -208,6 +172,14 @@ async function handleLogout() {
 }
 
 window.sb.auth.onAuthStateChange((event, session) => {
+    currentUser = session?.user || null;
+    updateLoginButton();
+    if (event === 'SIGNED_IN') {
+        window.dispatchEvent(new CustomEvent('userLoggedIn'));
+    }
+});
+
+window.sb.auth.getSession().then(({ data: { session } }) => {
     currentUser = session?.user || null;
     updateLoginButton();
 });

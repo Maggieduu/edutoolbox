@@ -1207,7 +1207,7 @@ body {
 }
 
 .auth-tab.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
     color: white;
     border-color: transparent;
 }
@@ -1224,13 +1224,13 @@ body {
 
 #loginForm input:focus, #registerForm input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #FF8E53;
 }
 
 .auth-submit {
     width: 100%;
     padding: 14px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
     color: white;
     border: none;
     border-radius: 8px;
@@ -1240,7 +1240,7 @@ body {
 }
 
 .auth-submit:hover {
-    opacity: 0.9;
+    background: linear-gradient(135deg, #FF5252 0%, #FF7043 100%);
 }
 
 .error-text {

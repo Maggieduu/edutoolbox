@@ -81,16 +81,7 @@ function initNavbar() {
         });
     });
 
-    // Add login button event listener
-    const loginBtn = document.querySelector('.login-btn');
-    if (loginBtn) {
-        loginBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (typeof openLoginModal === 'function') {
-                openLoginModal();
-            }
-        });
-    }
+    // Note: login button handler is managed by supabase.js via updateLoginButton()
 }
 
 /* ========================================
@@ -226,16 +217,17 @@ function generateCards(data, containerId) {
         const btnText = item.coming ? t.coming : getBtnText(item.badge, t);
 
         let cardLink = '#';
+        let clickHandler = '';
         if (!item.coming) {
             if (item.badge === 'game' || item.badge === 'tool') {
-                cardLink = `play.html?src=${item.link}`;
+                clickHandler = `onclick="handleCardClick(event, '${item.link}', '${item.badge}')"`;
             } else {
                 cardLink = item.link;
             }
         }
 
         html += `
-            <a href="${cardLink}" class="${cardClass}">
+            <a href="${cardLink}" class="${cardClass}" ${clickHandler}>
                 <span class="category-badge ${badge}">${badgeText}</span>
                 ${item.image
                     ? `<img src="${item.image}" alt="" class="card-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -250,6 +242,16 @@ function generateCards(data, containerId) {
     });
 
     container.innerHTML = html;
+}
+
+function handleCardClick(event, link, badge) {
+    event.preventDefault();
+    if (!currentUser) {
+        alert('请先登录才能使用此功能');
+        if (typeof openLoginModal === 'function') openLoginModal();
+        return;
+    }
+    window.location.href = `play.html?src=${link}`;
 }
 
 function getBtnText(badge, t) {
@@ -275,10 +277,8 @@ function generateScrollCards() {
     const allItems = [...SITE_DATA.games, ...SITE_DATA.tools];
 
     allItems.forEach(item => {
-        let cardLink = item.link;
-        if (item.badge === 'game' || item.badge === 'tool') {
-            cardLink = `play.html?src=${item.link}`;
-        }
+        const cardLink = `play.html?src=${item.link}`;
+        const clickHandler = `onclick="handleScrollCardClick(event, '${item.link}')"`;
 
         const imageSrc = item.image || '';
         const imageHtml = imageSrc
@@ -287,7 +287,7 @@ function generateScrollCards() {
             : `<span class="card-image-placeholder">${item.icon}</span>`;
 
         html += `
-            <a href="${cardLink}" class="tool-card">
+            <a href="${cardLink}" class="tool-card" ${clickHandler}>
                 ${imageHtml}
                 <div class="card-content">
                     <h3 data-i18n="${item.title}">${t[item.title]}</h3>
@@ -300,4 +300,14 @@ function generateScrollCards() {
 
     container.innerHTML = html;
     initScrollCards();
+}
+
+function handleScrollCardClick(event, link) {
+    event.preventDefault();
+    if (!currentUser) {
+        alert('请先登录才能使用此功能');
+        if (typeof openLoginModal === 'function') openLoginModal();
+        return;
+    }
+    window.location.href = `play.html?src=${link}`;
 }

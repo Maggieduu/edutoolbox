@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超级玛丽奥 - 汉字大冒险</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(180deg, #5c94fc 0%, #5c94fc 60%, #8b4513 60%, #8b4513 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .cloud {
+            position: fixed;
+            background: white;
+            border-radius: 50px;
+            z-index: 0;
+        }
+
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .cloud-1 {
+            width: 100px;
+            height: 40px;
+            top: 30px;
+            left: 10%;
+            animation: float 20s linear infinite;
+        }
+
+        .cloud-1::before {
+            width: 50px;
+            height: 50px;
+            top: -25px;
+            left: 15px;
+        }
+
+        .cloud-1::after {
+            width: 35px;
+            height: 35px;
+            top: -15px;
+            right: 15px;
+        }
+
+        .cloud-2 {
+            width: 80px;
+            height: 30px;
+            top: 80px;
+            right: 15%;
+            animation: float 25s linear infinite reverse;
+        }
+
+        .cloud-2::before {
+            width: 40px;
+            height: 40px;
+            top: -20px;
+            left: 10px;
+        }
+
+        .cloud-2::after {
+            width: 30px;
+            height: 30px;
+            top: -12px;
+            right: 10px;
+        }
+
+        @keyframes float {
+            0% { transform: translateX(-200px); }
+            100% { transform: translateX(calc(100vw + 200px)); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            z-index: 1;
+        }
+
+        .mario-title {
+            font-size: 3em;
+            color: #fff;
+            text-shadow: 3px 3px 0 #e52521, 6px 6px 0 #000;
+            margin-bottom: 5px;
+            animation: bounce 0.5s ease infinite alternate;
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+
+        .subtitle {
+            color: #ffd700;
+            font-size: 1.2em;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .mario-icon {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+
+        .game-container {
+            background: linear-gradient(145deg, #e74c3c 0%, #c0392b 100%);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 0 #922b21, 0 12px 20px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            border: 4px solid #000;
+            position: relative;
+            z-index: 1;
+        }
+
+        .brick-pattern {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 2px;
+        }
+
+        .brick {
+            width: 30px;
+            height: 15px;
+            background: #c0392b;
+            border: 2px solid #922b21;
+            border-radius: 3px;
+        }
+
+        .question-block {
+            width: 35px;
+            height: 35px;
+            background: #f1c40f;
+            border: 3px solid #f39c12;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            animation: shine 1s ease infinite;
+        }
+
+        @keyframes shine {
+            0%, 100% { box-shadow: 0 0 10px #f1c40f; }
+            50% { box-shadow: 0 0 20px #f1c40f, 0 0 30px #fff; }
+        }
+
+        .start-screen {
+            text-align: center;
+            padding: 15px;
+        }
+
+        .rules {
+            background: rgba(255,255,255,0.9);
+            border-radius: 15px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: left;
+            border: 3px solid #000;
+        }
+
+        .rules h3 {
+            color: #e74c3c;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .rule-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .rule-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+
+        .char-input-area {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .char-input {
+            width: 180px;
+            height: 50px;
+            font-size: 22px;
+            text-align: center;
+            border: 3px solid #000;
+            border-radius: 10px;
+            font-family: 'Comic Sans MS', serif;
+            background: #fff;
+        }
+
+        .char-input:focus {
+            outline: none;
+            border-color: #f1c40f;
+            box-shadow: 0 0 10px #f1c40f;
+        }
+
+        .add-btn {
+            padding: 12px 25px;
+            font-size: 16px;
+            background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+            border: 3px solid #000;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Comic Sans MS', sans-serif;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #1e8449;
+            transition: all 0.1s;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #1e8449;
+        }
+
+        .add-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #1e8449;
+        }
+
+        .char-list {
+            min-height: 50px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .char-tag {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(180deg, #3498db 0%, #2980b9 100%);
+            border: 3px solid #000;
+            border-radius: 10px;
+            font-size: 24px;
+            color: white;
+            font-weight: bold;
+            position: relative;
+            box-shadow: 0 3px 0 #1a5276;
+        }
+
+        .char-tag .remove {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 20px;
+            height: 20px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            font-size: 14px;
+            cursor: pointer;
+            border: 2px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .start-btn {
+            padding: 18px 50px;
+            font-size: 22px;
+            background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: 4px solid #000;
+            border-radius: 15px;
+            cursor: pointer;
+            font-family: 'Comic Sans MS', sans-serif;
+            font-weight: bold;
+            box-shadow: 0 6px 0 #922b21;
+            transition: all 0.1s;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .start-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 9px 0 #922b21;
+        }
+
+        .start-btn:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #922b21;
+        }
+
+        .start-btn:disabled {
+            background: #95a5a6;
+            box-shadow: 0 4px 0 #7f8c8d;
+            cursor: not-allowed;
+        }
+
+        .game-screen {
+            display: none;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 10px;
+            border: 3px solid #000;
+        }
+
+        .score-item {
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 12px;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .score-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .coin-display {
+            color: #f1c40f;
+        }
+
+        .hint-text {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        .hint-text .highlight {
+            color: #f1c40f;
+            font-weight: bold;
+        }
+
+        .character-display {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+            position: relative;
+            background: linear-gradient(145deg, #3498db 0%, #2980b9 100%);
+            border-radius: 15px;
+            border: 4px solid #000;
+            box-shadow: 0 6px 0 #1a5276, inset 0 0 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .character-display.revealed {
+            background: linear-gradient(145deg, #27ae60 0%, #1e8449 100%);
+            box-shadow: 0 6px 0 #145a32, inset 0 0 30px rgba(0,0,0,0.2);
+        }
+
+        .char-canvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #charCanvas {
+            width: 160px;
+            height: 160px;
+        }
+
+        .mask {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            background: linear-gradient(145deg, #f1c40f 0%, #f39c12 100%);
+            border: 3px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #fff;
+            text-shadow: 2px 2px 0 #000;
+            transition: all 0.3s;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        .mask:hover {
+            background: linear-gradient(145deg, #f39c12 0%, #e67e22 100%);
+            transform: scale(1.05);
+        }
+
+        .mask.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+
+        .mask.top-right { top: 0; right: 0; border-radius: 0 12px 0 0; }
+        .mask.top-left { top: 0; left: 0; border-radius: 12px 0 0 0; }
+        .mask.bottom-left { bottom: 0; left: 0; border-radius: 0 0 0 12px; }
+        .mask.bottom-right { bottom: 0; right: 0; border-radius: 0 0 12px 0; }
+
+        .options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .option-btn {
+            padding: 15px;
+            font-size: 36px;
+            border: 4px solid #000;
+            background: linear-gradient(180deg, #fff 0%, #ecf0f1 100%);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Comic Sans MS', serif;
+            color: #2c3e50;
+            box-shadow: 0 4px 0 #000;
+        }
+
+        .option-btn:hover:not(.disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 0 #000;
+            background: linear-gradient(180deg, #f1c40f 0%, #f39c12 100%);
+        }
+
+        .option-btn.correct {
+            background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+            animation: pulse 0.5s;
+        }
+
+        .option-btn.wrong {
+            background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            animation: shake 0.5s;
+        }
+
+        .option-btn.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: 3px solid #000;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: 'Comic Sans MS', sans-serif;
+            font-weight: bold;
+            transition: all 0.1s;
+        }
+
+        .btn-skip {
+            background: linear-gradient(180deg, #9b59b6 0%, #8e44ad 100%);
+            color: white;
+            box-shadow: 0 4px 0 #6c3483;
+        }
+
+        .btn-skip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #6c3483;
+        }
+
+        .btn-next {
+            background: linear-gradient(180deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            box-shadow: 0 4px 0 #1a5276;
+        }
+
+        .btn-next:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #1a5276;
+        }
+
+        .btn-next:disabled {
+            background: #95a5a6;
+            box-shadow: 0 4px 0 #7f8c8d;
+            cursor: not-allowed;
+        }
+
+        .result-screen {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .result-icon {
+            font-size: 80px;
+            margin-bottom: 15px;
+            animation: bounce 0.5s ease infinite alternate;
+        }
+
+        .result-title {
+            font-size: 28px;
+            color: #fff;
+            text-shadow: 3px 3px 0 #000;
+            margin-bottom: 15px;
+        }
+
+        .final-score {
+            font-size: 50px;
+            color: #f1c40f;
+            font-weight: bold;
+            text-shadow: 3px 3px 0 #000;
+            margin-bottom: 10px;
+        }
+
+        .result-message {
+            color: #fff;
+            margin-bottom: 20px;
+            font-size: 16px;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        .review-section {
+            background: rgba(255,255,255,0.9);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            border: 3px solid #000;
+            text-align: left;
+        }
+
+        .review-section h4 {
+            color: #e74c3c;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .review-char {
+            display: inline-flex;
+            align-items: center;
+            margin: 5px;
+            padding: 8px 12px;
+            background: linear-gradient(180deg, #3498db 0%, #2980b9 100%);
+            border-radius: 8px;
+            border: 2px solid #000;
+        }
+
+        .review-char .char {
+            font-size: 28px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .footer-mario {
+            margin-top: 20px;
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 1;
+        }
+
+        .mario-character {
+            font-size: 40px;
+            animation: walk 0.5s steps(2) infinite;
+        }
+
+        @keyframes walk {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0); }
+        }
+
+        .ground {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: repeating-linear-gradient(
+                90deg,
+                #8b4513 0px,
+                #8b4513 30px,
+                #a0522d 30px,
+                #a0522d 60px
+            );
+            border-top: 4px solid #654321;
+            z-index: 0;
+        }
+
+        .pipe {
+            position: fixed;
+            bottom: 40px;
+            width: 50px;
+            height: 70px;
+            background: linear-gradient(90deg, #27ae60 0%, #2ecc71 50%, #27ae60 100%);
+            border-radius: 10px 10px 0 0;
+            border: 4px solid #1e8449;
+            z-index: 0;
+        }
+
+        .pipe-1 { left: 5%; }
+        .pipe-2 { right: 8%; }
+
+        .pipe::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: -8px;
+            width: 66px;
+            height: 20px;
+            background: linear-gradient(90deg, #27ae60 0%, #2ecc71 50%, #27ae60 100%);
+            border-radius: 10px;
+            border: 4px solid #1e8449;
+        }
+    </style>
+</head>
+<body>
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="ground"></div>
+    <div class="pipe pipe-1"></div>
+    <div class="pipe pipe-2"></div>
+
+    <div class="header">
+        <div class="mario-icon">🍄</div>
+        <h1 class="mario-title">超级玛丽奥</h1>
+        <p class="subtitle">汉字大冒险</p>
+    </div>
+
+    <div class="game-container">
+        <div class="brick-pattern">
+            <div class="brick"></div>
+            <div class="brick"></div>
+            <div class="brick"></div>
+            <div class="brick"></div>
+            <div class="brick"></div>
+            <div class="brick"></div>
+            <div class="brick"></div>
+            <div class="question-block">?</div>
+            <div class="brick"></div>
+            <div class="brick"></div>
+            <div class="brick"></div>
+            <div class="brick"></div>
+            <div class="brick"></div>
+            <div class="brick"></div>
+            <div class="brick"></div>
+        </div>
+
+        <div class="start-screen" id="startScreen">
+            <div class="rules">
+                <h3>🎮 游戏规则</h3>
+                <div class="rule-item">
+                    <span class="rule-icon">👀</span>
+                    <span>汉字被藏在砖块后面，点击揭示</span>
+                </div>
+                <div class="rule-item">
+                    <span class="rule-icon">🎯</span>
+                    <span>点击你认为正确的汉字</span>
+                </div>
+                <div class="rule-item">
+                    <span class="rule-icon">⭐</span>
+                    <span>揭示越少猜对，星星越多</span>
+                </div>
+            </div>
+            <div class="char-input-area">
+                <input type="text" class="char-input" id="charInput" placeholder="输入汉字，如：天地日月">
+                <button class="add-btn" onclick="addCharacters()">添加</button>
+            </div>
+            <div class="char-list" id="charList"></div>
+            <button class="start-btn" id="startBtn" onclick="startGame()" disabled>开始游戏</button>
+        </div>
+
+        <div class="game-screen" id="gameScreen">
+            <div class="score-board">
+                <div class="score-item">
+                    <div class="score-label">⭐ 星星</div>
+                    <div class="score-value" id="currentScore">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">关卡</div>
+                    <div class="score-value"><span id="currentQ">1</span>/<span id="totalQ">10</span></div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">💡 提示</div>
+                    <div class="score-value" id="remainingHints">4</div>
+                </div>
+            </div>
+
+            <div class="hint-text">
+                点击砖块，砖块消失，找出底下的汉字
+            </div>
+
+            <div class="character-display" id="charDisplay">
+                <div class="char-canvas">
+                    <canvas id="charCanvas"></canvas>
+                </div>
+                <div id="masksContainer"></div>
+            </div>
+
+            <div class="options" id="options"></div>
+
+            <div class="controls">
+                <button class="btn btn-skip" onclick="skipQuestion()">跳过 ⏭</button>
+                <button class="btn btn-next" onclick="nextQuestion()" id="nextBtn" disabled>下一关 ➡</button>
+            </div>
+        </div>
+
+        <div class="result-screen" id="resultScreen">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <h2 class="result-title" id="resultTitle">挑战完成！</h2>
+            <div class="final-score" id="finalScore">0 ⭐</div>
+            <p class="result-message" id="resultMessage"></p>
+
+            <div class="review-section hidden" id="reviewSection">
+                <h4>📚 需要复习的字</h4>
+                <div id="reviewList"></div>
+            </div>
+
+            <button class="start-btn" onclick="restartGame()">再玩一次</button>
+        </div>
+    </div>
+
+    <div class="footer-mario">
+        <div class="mario-character">👾</div>
+        <div class="mario-character">🌵</div>
+        <div class="mario-character">🍄</div>
+    </div>
+
+    <script>
+        let customChars = [];
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            initAudio();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.4);
+            } else if (type === 'wrong') {
+                oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
+                oscillator.frequency.setValueAtTime(150, audioCtx.currentTime + 0.15);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'click') {
+                oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.1);
+            }
+        }
+
+        let gameState = {
+            currentQuestion: 0,
+            score: 0,
+            questions: [],
+            hiddenMasks: [],
+            answered: false,
+            results: [],
+            totalMasks: 4
+        };
+
+        function addCharacters() {
+            const input = document.getElementById('charInput');
+            const text = input.value.trim();
+
+            if (!text) return;
+
+            let added = 0;
+            for (const char of text) {
+                if (char.trim() && !customChars.includes(char)) {
+                    customChars.push(char);
+                    added++;
+                }
+            }
+
+            input.value = '';
+
+            if (added > 0) {
+                playSound('click');
+                renderCharList();
+                updateStartButton();
+            } else {
+                input.focus();
+            }
+        }
+
+        function removeCharacter(char) {
+            customChars = customChars.filter(c => c !== char);
+            playSound('click');
+            renderCharList();
+            updateStartButton();
+        }
+
+        function renderCharList() {
+            const list = document.getElementById('charList');
+            list.innerHTML = customChars.map(char => `
+                <span class="char-tag">
+                    ${char}
+                    <span class="remove" onclick="removeCharacter('${char}')">×</span>
+                </span>
+            `).join('');
+        }
+
+        function updateStartButton() {
+            const btn = document.getElementById('startBtn');
+            btn.disabled = customChars.length < 2;
+        }
+
+        document.getElementById('charInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addCharacters();
+            }
+        });
+
+        function startGame() {
+            if (customChars.length < 2) return;
+
+            playSound('click');
+            gameState.questions = [...customChars].sort(() => Math.random() - 0.5);
+            gameState.currentQuestion = 0;
+            gameState.score = 0;
+            gameState.results = [];
+            gameState.totalMasks = 4;
+
+            document.getElementById('totalQ').textContent = gameState.questions.length;
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('resultScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+
+            loadQuestion();
+        }
+
+        function generateMasks() {
+            const container = document.getElementById('masksContainer');
+            const display = document.getElementById('charDisplay');
+            container.innerHTML = '';
+
+            display.className = 'character-display';
+
+            const positions = [
+                { top: '0', right: '0', className: 'top-right' },
+                { top: '0', left: '0', className: 'top-left' },
+                { bottom: '0', left: '0', className: 'bottom-left' },
+                { bottom: '0', right: '0', className: 'bottom-right' }
+            ];
+
+            positions.forEach((pos, i) => {
+                const mask = document.createElement('div');
+                mask.className = 'mask ' + pos.className;
+                mask.id = 'mask' + i;
+                mask.onclick = () => revealPart(i);
+                mask.style.top = pos.top;
+                mask.style.right = pos.right;
+                mask.style.bottom = pos.bottom;
+                mask.style.left = pos.left;
+                container.appendChild(mask);
+            });
+        }
+
+        function loadQuestion() {
+            const q = gameState.questions[gameState.currentQuestion];
+            gameState.hiddenMasks = [];
+            gameState.answered = false;
+
+            document.getElementById('currentQ').textContent = gameState.results.length + 1;
+            document.getElementById('currentScore').textContent = gameState.score;
+            document.getElementById('remainingHints').textContent = gameState.totalMasks;
+            document.getElementById('nextBtn').disabled = true;
+            document.getElementById('charDisplay').classList.remove('revealed');
+
+            generateMasks();
+            drawCharacter(q);
+            generateOptions(q);
+        }
+
+        function drawCharacter(char) {
+            const canvas = document.getElementById('charCanvas');
+            const ctx = canvas.getContext('2d');
+            const size = 160;
+            canvas.width = size;
+            canvas.height = size;
+
+            ctx.clearRect(0, 0, size, size);
+            ctx.fillStyle = '#fff';
+            ctx.font = `100px "Comic Sans MS", "Microsoft YaHei", serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(char, size / 2, size / 2);
+        }
+
+        function revealPart(maskIndex) {
+            if (gameState.answered) return;
+            if (gameState.hiddenMasks.includes(maskIndex)) return;
+
+            playSound('click');
+            document.getElementById('mask' + maskIndex).classList.add('hidden');
+            gameState.hiddenMasks.push(maskIndex);
+
+            document.getElementById('remainingHints').textContent = gameState.totalMasks - gameState.hiddenMasks.length;
+        }
+
+        function generateOptions(correctChar) {
+            const options = [correctChar];
+
+            const others = gameState.questions
+                .filter(q => q !== correctChar)
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 3);
+
+            options.push(...others);
+
+            while (options.length < 4) {
+                const extra = ['大', '小', '上', '下', '中', '人', '口', '目', '手', '足'].filter(c => !options.includes(c));
+                if (extra.length > 0) {
+                    options.push(extra[0]);
+                } else {
+                    break;
+                }
+            }
+
+            options.sort(() => Math.random() - 0.5);
+
+            const container = document.getElementById('options');
+            container.innerHTML = '';
+
+            options.forEach(char => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = char;
+                btn.onclick = () => selectOption(char, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectOption(selectedChar, btnElement) {
+            if (gameState.answered) return;
+
+            gameState.answered = true;
+            const correctChar = gameState.questions[gameState.currentQuestion];
+            const isCorrect = selectedChar === correctChar;
+
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.add('disabled');
+                if (btn.textContent === correctChar) {
+                    btn.classList.add('correct');
+                }
+            });
+
+            if (isCorrect) {
+                playSound('correct');
+                btnElement.classList.add('correct');
+                const revealCount = gameState.hiddenMasks.length;
+                const scoreIdx = Math.min(revealCount, 3);
+                const points = (gameState.totalMasks - scoreIdx);
+                gameState.score += points;
+            } else {
+                playSound('wrong');
+                btnElement.classList.add('wrong');
+            }
+
+            gameState.results.push({
+                char: correctChar,
+                correct: isCorrect,
+                revealed: gameState.totalMasks - gameState.hiddenMasks.length
+            });
+
+            document.getElementById('currentScore').textContent = gameState.score;
+            document.getElementById('nextBtn').disabled = false;
+
+            document.getElementById('charDisplay').classList.add('revealed');
+            for (let i = 0; i < gameState.totalMasks; i++) {
+                document.getElementById('mask' + i).classList.add('hidden');
+            }
+        }
+
+        function skipQuestion() {
+            if (gameState.answered) return;
+
+            playSound('wrong');
+            gameState.answered = true;
+            const q = gameState.questions[gameState.currentQuestion];
+
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.add('disabled');
+                if (btn.textContent === q) {
+                    btn.classList.add('correct');
+                }
+            });
+
+            gameState.results.push({
+                char: q,
+                correct: false,
+                revealed: gameState.totalMasks - gameState.hiddenMasks.length,
+                skipped: true
+            });
+
+            document.getElementById('charDisplay').classList.add('revealed');
+            for (let i = 0; i < gameState.totalMasks; i++) {
+                document.getElementById('mask' + i).classList.add('hidden');
+            }
+
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function nextQuestion() {
+            playSound('click');
+            gameState.currentQuestion = gameState.results.length;
+
+            if (gameState.currentQuestion >= gameState.questions.length) {
+                showResult();
+            } else {
+                loadQuestion();
+            }
+        }
+
+        function showResult() {
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('resultScreen').style.display = 'block';
+
+            const finalScore = gameState.score;
+            const maxScore = gameState.questions.length * 4;
+
+            document.getElementById('finalScore').textContent = finalScore + ' ⭐';
+
+            let icon, title, message;
+            const accuracy = gameState.results.filter(r => r.correct).length / gameState.results.length;
+
+            if (accuracy === 1) {
+                icon = '🏆';
+                title = '太棒了！你是超级玛丽奥！';
+                message = '全对！星星都收集齐啦！';
+                playSound('correct');
+            } else if (accuracy >= 0.7) {
+                icon = '🌟';
+                title = '真厉害！';
+                message = '大部分都对，继续加油！';
+            } else if (accuracy >= 0.4) {
+                icon = '💪';
+                title = '还不错！';
+                message = '多练习就能全部答对！';
+            } else {
+                icon = '📚';
+                title = '继续努力！';
+                message = '加油练习吧！';
+            }
+
+            document.getElementById('resultIcon').textContent = icon;
+            document.getElementById('resultTitle').textContent = title;
+            document.getElementById('resultMessage').textContent = message;
+
+            const wrongAnswers = gameState.results.filter(r => !r.correct);
+            if (wrongAnswers.length > 0) {
+                const reviewSection = document.getElementById('reviewSection');
+                reviewSection.classList.remove('hidden');
+
+                const reviewList = document.getElementById('reviewList');
+                reviewList.innerHTML = wrongAnswers.map(r => `
+                    <div class="review-char">
+                        <span class="char">${r.char}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function restartGame() {
+            playSound('click');
+            document.getElementById('resultScreen').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'block';
+        }
+
+        // 页面加载时检查 localStorage 是否有模板
+        document.addEventListener('DOMContentLoaded', function() {
+            const templateData = localStorage.getItem('currentTemplate');
+            if (templateData) {
+                const template = JSON.parse(templateData);
+                if (template.content && template.content.words) {
+                    // 从模板加载汉字
+                    customChars = template.content.words.filter(char => char.trim());
+                    renderCharList();
+                    updateStartButton();
+                    
+                    // 隐藏输入区域，直接显示已加载的字
+                    const charInputArea = document.querySelector('.char-input-area');
+                    if (charInputArea) {
+                        charInputArea.style.display = 'none';
+                    }
+                    
+                    // 添加提示信息
+                    const rulesDiv = document.querySelector('.rules');
+                    if (rulesDiv) {
+                        const infoDiv = document.createElement('div');
+                        infoDiv.className = 'rule-item';
+                        infoDiv.innerHTML = `<span class="rule-icon">✅</span><span>已加载社区模板：${template.title || '未命名'}</span>`;
+                        infoDiv.style.background = 'rgba(46, 204, 113, 0.2)';
+                        infoDiv.style.borderRadius = '10px';
+                        infoDiv.style.padding = '10px';
+                        rulesDiv.appendChild(infoDiv);
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

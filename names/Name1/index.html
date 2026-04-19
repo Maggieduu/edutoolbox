@@ -515,6 +515,25 @@
         document.getElementById('start').addEventListener('click', startGame);
         document.getElementById('restart').addEventListener('click', restartGame);
 
+        // 页面加载时检查 localStorage 是否有模板
+        document.addEventListener('DOMContentLoaded', function() {
+            const templateData = localStorage.getItem('currentTemplate');
+            if (templateData) {
+                try {
+                    const template = JSON.parse(templateData);
+                    if (template.content && template.content.pairs) {
+                        game.wordPairs = template.content.pairs;
+                        game.redPieces = [...game.wordPairs.map(p => p.red)];
+                        game.bluePieces = [...game.wordPairs.map(p => p.blue)];
+                        renderPieces();
+                        statusEl.textContent = `📋 已加载模板：${template.title}，点击开始游戏`;
+                    }
+                } catch (e) {
+                    console.error('解析模板失败', e);
+                }
+            }
+        });
+
         // 处理文件上传
         function handleFile(e) {
             const file = e.target.files[0];

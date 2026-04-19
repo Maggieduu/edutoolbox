@@ -719,6 +719,24 @@
         let currentRotation = 0;
         let selectedHistory = [];
 
+        // 页面加载时检查 localStorage 是否有模板
+        document.addEventListener('DOMContentLoaded', function() {
+            const templateData = localStorage.getItem('currentTemplate');
+            if (templateData) {
+                try {
+                    const template = JSON.parse(templateData);
+                    if (template.content && template.content.words) {
+                        allNames = template.content.words;
+                        remainingNames = [...allNames];
+                        document.getElementById('namesInput').value = allNames.join('\n');
+                        alert(`📋 已加载模板：${template.title}\n点击"🎲 开始点名"按钮开始！`);
+                    }
+                } catch (e) {
+                    console.error('解析模板失败', e);
+                }
+            }
+        });
+
         // 颜色数组
         const colors = [
             '#2563EB', '#F59E0B', '#EC4899', '#10B981',

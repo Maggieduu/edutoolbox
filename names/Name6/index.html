@@ -326,6 +326,24 @@
         let currentQuestionIndex = 0;
         let totalQuestions = 0;
         let originalPositions = [];
+
+        // 页面加载时检查 localStorage 是否有模板
+        document.addEventListener('DOMContentLoaded', function() {
+            const templateData = localStorage.getItem('currentTemplate');
+            if (templateData) {
+                try {
+                    const template = JSON.parse(templateData);
+                    if (template.content && template.content.sentences) {
+                        words = template.content.sentences;
+                        totalQuestions = words.length;
+                        startBtn.disabled = false;
+                        alert(`📋 已加载模板：${template.title}\n点击"Start"按钮开始游戏！`);
+                    }
+                } catch (e) {
+                    console.error('解析模板失败', e);
+                }
+            }
+        });
         
         // DOM元素
         const wordFileInput = document.getElementById('wordFile');

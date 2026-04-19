@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的收藏 - Edu Toolbox</title>
+    <title>我的上传 - Edu Toolbox</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-            background: #FFFDE7;
+            background: #DBEAFE;
         }
         .page-header {
-            background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+            background: linear-gradient(180deg, #3B82F6 0%, #1D4ED8 100%);
             padding: 80px 20px 60px;
             text-align: center;
             border-radius: 0 0 40px 40px;
@@ -22,13 +22,13 @@
             font-weight: 800;
             color: #fff;
             margin-bottom: 10px;
-            text-shadow: 4px 4px 0px #333;
+            text-shadow: 4px 4px 0px #1E3A8A;
         }
         .page-header p {
             font-size: 18px;
             color: #fff;
             font-weight: 600;
-            text-shadow: 2px 2px 0px #333;
+            text-shadow: 2px 2px 0px #1E3A8A;
         }
         .btn-back {
             background: white;
@@ -47,21 +47,6 @@
         .btn-back:hover {
             transform: translateY(-3px);
         }
-        .btn-remove {
-            background: #FEE2E2;
-            color: #DC2626;
-            border: 2px solid #DC2626;
-            padding: 6px 12px;
-            font-size: 13px;
-            font-weight: 700;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-remove:hover {
-            background: #DC2626;
-            color: white;
-        }
         @media (max-width: 768px) {
             .page-header {
                 padding: 60px 20px 40px;
@@ -76,8 +61,8 @@
 <body>
 
     <div class="page-header">
-        <h1>❤️ 我的收藏</h1>
-        <p>我收藏的模板</p>
+        <h1>📤 我的上传</h1>
+        <p>我上传的原创模板</p>
     </div>
 
     <div class="max-w-4xl mx-auto px-4 pb-12">
@@ -85,7 +70,7 @@
             <a href="community.html" class="btn-back">← 返回社区</a>
         </div>
 
-        <div id="favorites-container" class="space-y-4">
+        <div id="uploads-container" class="space-y-4">
             <p class="text-center py-12 text-gray-500">加载中...</p>
         </div>
     </div>
@@ -109,14 +94,14 @@
     <script src="js/data.js"></script>
     <script src="js/shared.js"></script>
     <script>
-        async function loadFavorites() {
-            const container = document.getElementById('favorites-container');
+        async function loadUploads() {
+            const container = document.getElementById('uploads-container');
 
             if (!currentUser) {
                 container.innerHTML = `
                     <div class="text-center py-12">
-                        <p class="text-xl text-gray-600 mb-4">请先登录查看收藏</p>
-                        <button onclick="openLoginModal()" class="bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold py-3 px-6 rounded-xl">
+                        <p class="text-xl text-gray-600 mb-4">请先登录查看上传</p>
+                        <button onclick="openLoginModal()" class="bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-bold py-3 px-6 rounded-xl">
                             登录
                         </button>
                     </div>
@@ -128,7 +113,7 @@
                 const { data, error } = await window.sb.from('templates')
                     .select('*')
                     .eq('author', currentUser.email)
-                    .not('cloned_from', 'is', null)
+                    .is('cloned_from', null)
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
@@ -136,10 +121,10 @@
                 if (!data || data.length === 0) {
                     container.innerHTML = `
                         <div class="text-center py-12">
-                            <p class="text-4xl mb-4">❤️</p>
-                            <p class="text-xl text-gray-600 mb-4">还没有收藏任何模板</p>
-                            <a href="community.html" class="inline-block bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold py-3 px-6 rounded-xl">
-                                去社区看看
+                            <p class="text-4xl mb-4">📤</p>
+                            <p class="text-xl text-gray-600 mb-4">还没有上传任何模板</p>
+                            <a href="community.html" class="inline-block bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-bold py-3 px-6 rounded-xl">
+                                去社区上传
                             </a>
                         </div>
                     `;
@@ -159,14 +144,14 @@
                     <div class="bg-white rounded-2xl p-6 border-3 border-gray-300 shadow-lg">
                         <div class="flex justify-between items-start mb-4">
                             <div>
-                                <span class="inline-block bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-sm font-bold mb-2">
+                                <span class="inline-block bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-bold mb-2">
                                     ${gameTypeLabels[template.game_type] || template.game_type}
                                 </span>
                                 <h3 class="text-xl font-bold text-gray-800">${template.title}</h3>
                                 <p class="text-gray-500 text-sm mt-1">by ${template.author_name || template.author}</p>
                             </div>
-                            <button onclick="removeFavorite('${template.id}')" class="btn-remove">
-                                取消收藏
+                            <button onclick="deleteTemplate('${template.id}')" class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-bold hover:bg-red-200 transition-colors">
+                                删除
                             </button>
                         </div>
                         <p class="text-gray-600 mb-4">${template.description || '暂无描述'}</p>
@@ -185,24 +170,24 @@
             }
         }
 
-        async function removeFavorite(templateId) {
+        async function deleteTemplate(templateId) {
             if (!confirm('确定要删除这个模板吗？')) return;
 
             try {
                 const { error } = await window.sb.from('templates').delete().eq('id', templateId);
                 if (error) throw error;
-
-                loadFavorites();
+                
+                loadUploads();
 
             } catch (error) {
                 console.error('删除失败:', error);
-                alert('操作失败');
+                alert('删除失败');
             }
         }
 
-        async function playTemplate(docId) {
+        async function playTemplate(templateId) {
             try {
-                const { data, error } = await window.sb.from('templates').select('*').eq('id', docId).single();
+                const { data, error } = await window.sb.from('templates').select('*').eq('id', templateId).single();
                 if (error || !data) {
                     alert('模板不存在');
                     return;
@@ -221,7 +206,7 @@
                 };
 
                 const gamePath = gamePaths[data.game_type] || './names/Name1/index.html';
-                window.location.href = `play.html?src=${gamePath}&template=${docId}`;
+                window.location.href = `play.html?src=${gamePath}&template=${templateId}`;
 
             } catch (error) {
                 console.error('加载失败:', error);
@@ -231,7 +216,7 @@
 
         async function initPage() {
             await window.sb.auth.getSession();
-            loadFavorites();
+            loadUploads();
         }
 
         document.addEventListener('DOMContentLoaded', initPage);

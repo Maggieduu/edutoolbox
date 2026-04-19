@@ -81,6 +81,10 @@ const SITE_DATA = {
             game5TitleEn: 'Scrambled Sentences',
             game5Desc: '组合正确句子',
             game5DescFull: '把词语按照正确的顺序组合成句子',
+            // 谁是卧底
+            game6Title: '谁是卧底',
+            game6Desc: '找出被挡住的汉字',
+            game6DescFull: '在词语中找出被隐藏的那个字',
             // 汉字大侦探
             tool1Title: '汉字大侦探',
             tool1TitleEn: 'Word Detective Generator',
@@ -190,6 +194,11 @@ const SITE_DATA = {
             game5TitleEn: '',
             game5Desc: 'Arrange words into correct sentence order',
             game5DescFull: 'Arrange words into correct sentence order',
+            // Who is the Mole
+            game6Title: 'Who is the Mole',
+            game6TitleEn: '',
+            game6Desc: 'Find the hidden Chinese character',
+            game6DescFull: 'Find the hidden character among the words',
             // Word Detective Generator
             tool1Title: 'Word Detective Generator',
             tool1TitleEn: '',
@@ -274,6 +283,16 @@ const SITE_DATA = {
             link: './names/Name6/index.html',
             image: './names/Name6/preview6.jpg',
             icon: '📝',
+            badge: 'game'
+        },
+        {
+            title: 'game6Title',
+            titleEn: 'game6TitleEn',
+            desc: 'game6Desc',
+            descFull: 'game6DescFull',
+            link: './names/Name8/index.html',
+            image: './names/Name8/preview8.jpg',
+            icon: '🔍',
             badge: 'game'
         }
     ],

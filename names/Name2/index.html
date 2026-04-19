@@ -207,6 +207,23 @@
             generateGame();
         };
 
+        // 页面加载时检查 localStorage 是否有模板
+        document.addEventListener('DOMContentLoaded', function() {
+            const templateData = localStorage.getItem('currentTemplate');
+            if (templateData) {
+                try {
+                    const template = JSON.parse(templateData);
+                    if (template.content && template.content.words) {
+                        const words = template.content.words;
+                        document.getElementById('inputArea').value = words.join('\n');
+                        alert(`📋 已加载模板：${template.title}\n点击"生成"按钮开始游戏！`);
+                    }
+                } catch (e) {
+                    console.error('解析模板失败', e);
+                }
+            }
+        });
+
         function generateGame() {
             const input = document.getElementById('inputArea').value;
             const words = input.split('\n').filter(word => word.trim() !== '');
