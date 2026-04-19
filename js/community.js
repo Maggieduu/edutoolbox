@@ -157,44 +157,58 @@ async function cloneTemplate(docId) {
 function showUploadModal() {
     if (!currentUser) {
         alert('请先登录');
-        if (typeof showLoginModal === 'function') showLoginModal();
+        if (typeof openLoginModal === 'function') openLoginModal();
         return;
     }
 
     const modal = document.createElement('div');
-    modal.className = 'upload-modal';
+    modal.id = 'uploadModal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
     modal.innerHTML = `
-        <div class="upload-modal-content">
-            <span class="upload-close">&times;</span>
-            <h2>📤 上传模板</h2>
-            <form id="upload-form">
-                <label>游戏类型</label>
-                <select id="upload-game-type" required>
-                    <option value="">选择游戏类型</option>
-                    <option value="gomoku">🎮 五子棋</option>
-                    <option value="word-search">🔍 汉字大侦探</option>
-                    <option value="flashcards">🃏 生词翻翻看</option>
-                    <option value="scrambled">📝 疯狂的句子</option>
-                    <option value="name-picker">🎯 随机点名器</option>
-                </select>
-
-                <label>模板标题</label>
-                <input type="text" id="upload-title" placeholder="例如：Grade2 同义词练习" required>
-
-                <label>描述</label>
-                <textarea id="upload-desc" placeholder="简要描述这个模板..."></textarea>
-
-                <label>内容（JSON格式）</label>
-                <textarea id="upload-content" placeholder='{"pairs": [["大","小"],["高","矮"]]}' required></textarea>
-
-                <button type="submit" class="upload-submit">发布</button>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all">
+            <div class="bg-gradient-to-r from-orange-500 to-pink-500 rounded-t-2xl px-6 py-4 flex justify-between items-center">
+                <h3 class="text-white text-xl font-bold">📤 上传模板</h3>
+                <button onclick="document.getElementById('uploadModal').remove()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form id="upload-form" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">游戏类型</label>
+                    <select id="upload-game-type" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors bg-white">
+                        <option value="">选择游戏类型</option>
+                        <option value="gomoku">🎮 五子棋</option>
+                        <option value="word-search">🔍 汉字大侦探</option>
+                        <option value="flashcards">🃏 生词翻翻看</option>
+                        <option value="scrambled">📝 疯狂的句子</option>
+                        <option value="name-picker">🎯 随机点名器</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">模板标题</label>
+                    <input type="text" id="upload-title" placeholder="例如：Grade2 同义词练习" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">描述</label>
+                    <textarea id="upload-desc" placeholder="简要描述这个模板..." rows="2" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors resize-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">内容（JSON格式）</label>
+                    <textarea id="upload-content" placeholder='{"pairs": [["大","小"],["高","矮"]]}' required rows="4" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors resize-none font-mono text-sm"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold py-3 px-6 rounded-xl hover:from-orange-600 hover:to-pink-600 transform hover:-translate-y-0.5 transition-all shadow-lg">
+                    🚀 发布模板
+                </button>
             </form>
         </div>
     `;
     document.body.appendChild(modal);
 
-    modal.querySelector('.upload-close').onclick = () => modal.remove();
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
 
     document.getElementById('upload-form').onsubmit = async (e) => {
         e.preventDefault();
