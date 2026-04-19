@@ -1,16 +1,7 @@
-const firebaseConfig = {
-    apiKey: "AIzaSyDEF5OlhWKtJHG6Or4LODNJD9qf_3eaeD4",
-    authDomain: "edutoolbox-maggieduu.firebaseapp.com",
-    projectId: "edutoolbox-maggieduu",
-    storageBucket: "edutoolbox-maggieduu.firebasestorage.app",
-    messagingSenderId: "936003862916",
-    appId: "1:936003862916:web:0d1e26acf32e92975d1dd1",
-    measurementId: "G-7HVY2BJ9NN"
-};
+const SUPABASE_URL = 'YOUR_SUPABASE_PROJECT_URL';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser = null;
 
@@ -63,42 +54,51 @@ function switchAuthTab(tab) {
     }
 }
 
-function handleLogin() {
+async function handleLogin() {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
     const errorEl = document.getElementById('loginError');
     errorEl.textContent = '';
 
-    auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            currentUser = userCredential.user;
-            updateLoginButton();
-            closeLoginModal();
-        })
-        .catch((error) => {
-            errorEl.textContent = '登录失败：' + error.message;
-        });
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password
+    });
+
+    if (error) {
+        errorEl.textContent = '登录失败：' + error.message;
+    } else {
+        currentUser = data.user;
+        updateLoginButton();
+        closeLoginModal();
+    }
 }
 
-function handleRegister() {
+async function handleRegister() {
     const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
     const errorEl = document.getElementById('registerError');
     errorEl.textContent = '';
 
-    auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            currentUser = userCredential.user;
-            db.collection('users').doc(currentUser.uid).set({
-                email: currentUser.email,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    const { data, error } = await supabase.auth.signUp({
+        email: email,
+        password: password
+    });
+
+    if (error) {
+        errorEl.textContent = '注册失败：' + error.message;
+    } else {
+        currentUser = data.user;
+        if (data.user) {
+            const { error: dbError } = await supabase.from('users').insert({
+                id: data.user.id,
+                email: data.user.email,
+                created_at: new Date().toISOString()
             });
-            updateLoginButton();
-            closeLoginModal();
-        })
-        .catch((error) => {
-            errorEl.textContent = '注册失败：' + error.message;
-        });
+        }
+        updateLoginButton();
+        closeLoginModal();
+    }
 }
 
 function updateLoginButton() {
@@ -112,7 +112,7 @@ function updateLoginButton() {
     }
 }
 
-auth.onAuthStateChanged((user) => {
-    currentUser = user;
+supabase.auth.onAuthStateChange((event, session) => {
+    currentUser = session?.user || null;
     updateLoginButton();
 });
