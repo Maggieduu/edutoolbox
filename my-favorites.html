@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的收藏 - Edu Toolbox</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: #FFFDE7;
+        }
+        .page-header {
+            background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+            padding: 80px 20px 60px;
+            text-align: center;
+            border-radius: 0 0 40px 40px;
+            margin-bottom: 40px;
+        }
+        .page-header h1 {
+            font-size: 42px;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 10px;
+            text-shadow: 4px 4px 0px #333;
+        }
+        .page-header p {
+            font-size: 18px;
+            color: #fff;
+            font-weight: 600;
+            text-shadow: 2px 2px 0px #333;
+        }
+        .btn-back {
+            background: white;
+            color: #333;
+            border: 3px solid #333;
+            padding: 12px 24px;
+            font-weight: 700;
+            border-radius: 50px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 5px 5px 0px #333;
+            transition: transform 0.2s;
+        }
+        .btn-back:hover {
+            transform: translateY(-3px);
+        }
+        .btn-remove {
+            background: #FEE2E2;
+            color: #DC2626;
+            border: 2px solid #DC2626;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-remove:hover {
+            background: #DC2626;
+            color: white;
+        }
+        @media (max-width: 768px) {
+            .page-header {
+                padding: 60px 20px 40px;
+                border-radius: 0 0 30px 30px;
+            }
+            .page-header h1 {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-header">
+        <h1>⭐ 我的收藏</h1>
+        <p>我收藏的模板</p>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4 pb-12">
+        <div class="mb-6 text-center">
+            <a href="community.html" class="btn-back">← 返回社区</a>
+        </div>
+
+        <div id="favorites-container" class="space-y-4">
+            <p class="text-center py-12 text-gray-500">加载中...</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="index.html">首页</a>
+            <a href="games.html">游戏</a>
+            <a href="tools.html">工具</a>
+            <a href="ai.html">AI助手</a>
+            <a href="resources.html">其他资源</a>
+            <a href="community.html">社区</a>
+        </div>
+        <p>&copy; 2024 Edu Toolbox. All rights reserved.</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/shared.js"></script>
+    <script>
+        async function loadFavorites() {
+            const container = document.getElementById('favorites-container');
+
+            if (!currentUser) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <p class="text-xl text-gray-600 mb-4">请先登录查看收藏</p>
+                        <button onclick="openLoginModal()" class="bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold py-3 px-6 rounded-xl">
+                            登录
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const { data, error } = await window.sb.from('templates')
+                    .select('*')
+                    .contains('favorited_by', [currentUser.id])
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12">
+                            <p class="text-4xl mb-4">⭐</p>
+                            <p class="text-xl text-gray-600 mb-4">还没有收藏任何模板</p>
+                            <a href="community.html" class="inline-block bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold py-3 px-6 rounded-xl">
+                                去社区看看
+                            </a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const gameTypeLabels = {
+                    'gomoku': '🎮 五子棋',
+                    'word-search': '🔍 汉字大侦探',
+                    'flashcards': '🃏 生词翻翻看',
+                    'snake': '🐍 贪吃蛇',
+                    'scrambled': '📝 疯狂的句子',
+                    'name-picker': '🎯 随机点名器'
+                };
+
+                container.innerHTML = data.map(template => `
+                    <div class="bg-white rounded-2xl p-6 border-3 border-gray-300 shadow-lg">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <span class="inline-block bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-sm font-bold mb-2">
+                                    ${gameTypeLabels[template.game_type] || template.game_type}
+                                </span>
+                                <h3 class="text-xl font-bold text-gray-800">${template.title}</h3>
+                                <p class="text-gray-500 text-sm mt-1">by ${template.author_name || template.author}</p>
+                            </div>
+                            <button onclick="removeFavorite('${template.id}')" class="btn-remove">
+                                取消收藏
+                            </button>
+                        </div>
+                        <p class="text-gray-600 mb-4">${template.description || '暂无描述'}</p>
+                        <div class="flex justify-between items-center pt-4 border-t border-gray-200">
+                            <span class="text-gray-400 text-sm">${template.play_count || 0} 次游玩</span>
+                            <button onclick="playTemplate('${template.id}')" class="bg-gradient-to-r from-green-400 to-teal-500 text-white font-bold py-2 px-6 rounded-xl hover:from-green-500 hover:to-teal-600 transition-all">
+                                ▶ 开始游戏
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('加载失败:', error);
+                container.innerHTML = '<p class="text-center text-red-500 py-12">加载失败，请刷新重试</p>';
+            }
+        }
+
+        async function removeFavorite(templateId) {
+            if (!confirm('确定要取消收藏吗？')) return;
+
+            try {
+                const { data, error } = await window.sb.from('templates').select('favorited_by').eq('id', templateId).single();
+                if (error || !data) return;
+
+                const favoritedBy = (data.favorited_by || []).filter(id => id !== currentUser.id);
+                await window.sb.from('templates').update({ favorited_by: favoritedBy }).eq('id', templateId);
+
+                loadFavorites();
+
+            } catch (error) {
+                console.error('取消收藏失败:', error);
+                alert('操作失败');
+            }
+        }
+
+        async function playTemplate(docId) {
+            try {
+                const { data, error } = await window.sb.from('templates').select('*').eq('id', docId).single();
+                if (error || !data) {
+                    alert('模板不存在');
+                    return;
+                }
+
+                localStorage.setItem('currentTemplate', JSON.stringify(data));
+                window.location.href = `play.html?src=./names/Name1/index.html&template=${docId}`;
+
+            } catch (error) {
+                console.error('加载失败:', error);
+                alert('加载失败');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadFavorites);
+    </script>
+</body>
+</html>

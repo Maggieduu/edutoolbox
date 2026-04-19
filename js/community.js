@@ -59,6 +59,11 @@ function createTemplateCard(template, docId) {
         'name-picker': '随机点名器'
     };
 
+    const favoritedBy = template.favorited_by || [];
+    const isFavorited = currentUser && favoritedBy.includes(currentUser.id);
+    const starClass = isFavorited ? 'text-yellow-500' : 'text-gray-300';
+    const starTitle = isFavorited ? '已收藏' : '收藏';
+
     card.innerHTML = `
         <div class="template-header">
             <span class="template-badge">${gameTypeLabels[template.game_type] || template.game_type}</span>
@@ -70,11 +75,48 @@ function createTemplateCard(template, docId) {
             <span class="template-author">by ${template.author_name || template.author}</span>
             <div class="template-actions">
                 <button class="btn-play" onclick="playTemplate('${docId}')">▶ 玩</button>
-                ${currentUser ? `<button class="btn-clone" onclick="cloneTemplate('${docId}')">📋 Clone</button>` : ''}
+                ${currentUser ? `<button class="btn-star ${starClass}" onclick="toggleFavorite('${docId}')" title="${starTitle}">⭐</button>` : ''}
             </div>
         </div>
     `;
     return card;
+}
+
+// 收藏/取消收藏模板
+async function toggleFavorite(docId) {
+    if (!currentUser) {
+        alert('请先登录');
+        return;
+    }
+
+    try {
+        const { data, error } = await window.sb.from('templates').select('favorited_by').eq('id', docId).single();
+        if (error || !data) {
+            alert('模板不存在');
+            return;
+        }
+
+        const favoritedBy = data.favorited_by || [];
+        const userId = currentUser.id;
+        const isFavorited = favoritedBy.includes(userId);
+
+        let newFavoritedBy;
+        if (isFavorited) {
+            newFavoritedBy = favoritedBy.filter(id => id !== userId);
+        } else {
+            newFavoritedBy = [...favoritedBy, userId];
+        }
+
+        const { error: updateError } = await window.sb.from('templates').update({ favorited_by: newFavoritedBy }).eq('id', docId);
+
+        if (updateError) throw updateError;
+
+        loadCommunityTemplates();
+
+    } catch (error) {
+        console.error('收藏失败:', error);
+        alert('操作失败');
+    }
 }
 
 // 玩游戏模板
@@ -98,58 +140,6 @@ async function playTemplate(docId) {
     } catch (error) {
         console.error('加载模板失败:', error);
         alert('加载失败');
-    }
-}
-
-// Clone 模板到我的收藏
-async function cloneTemplate(docId) {
-    if (!currentUser) {
-        alert('请先登录');
-        return;
-    }
-
-    try {
-        const { data, error } = await window.sb.from('templates').select('*').eq('id', docId).single();
-        if (error || !data) {
-            alert('模板不存在');
-            return;
-        }
-
-        const template = data;
-
-        // 检查用户已有多少模板
-        const { data: userTemplates, error: countError } = await window.sb.from('templates')
-            .select('id', { count: 'exact' })
-            .eq('author', currentUser.email);
-
-        if (countError) throw countError;
-
-        // 简单限制：免费用户最多3个模板
-        if (userTemplates && userTemplates.length >= 3) {
-            alert('免费用户最多保存3个模板，请升级或删除旧模板');
-            return;
-        }
-
-        // 复制到用户
-        const { error: insertError } = await window.sb.from('templates').insert({
-            game_type: template.game_type,
-            title: template.title,
-            description: template.description,
-            content: template.content,
-            author: currentUser.email,
-            author_name: currentUser.email.split('@')[0],
-            created_at: new Date().toISOString(),
-            play_count: 0,
-            cloned_from: docId
-        });
-
-        if (insertError) throw insertError;
-
-        alert('已保存到你的收藏！');
-
-    } catch (error) {
-        console.error('Clone失败:', error);
-        alert('Clone失败');
     }
 }
 
