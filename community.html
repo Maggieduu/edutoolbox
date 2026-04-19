@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>社区 - Edu Toolbox</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            background: #FFFDE7;
+        }
+
+        .page-header {
+            background: linear-gradient(180deg, #FF6B6B 0%, #FF8E53 100%);
+            padding: 80px 20px 60px;
+            text-align: center;
+            border-radius: 0 0 40px 40px;
+            margin-bottom: 40px;
+        }
+
+        .page-header h1 {
+            font-size: 42px;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 10px;
+            text-shadow: 4px 4px 0px #333;
+        }
+
+        .page-header p {
+            font-size: 18px;
+            color: #fff;
+            font-weight: 600;
+            text-shadow: 2px 2px 0px #333;
+        }
+
+        .page-content {
+            padding: 0 40px 60px;
+        }
+
+        .community-actions {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .btn-upload {
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-upload:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+        }
+
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .template-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            border: 3px solid #333;
+            box-shadow: 6px 6px 0px #333;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .template-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 8px 10px 0px #333;
+        }
+
+        .template-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .template-badge {
+            background: #FFF3E0;
+            color: #FF6B6B;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .template-plays {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .template-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .template-desc {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .template-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 2px dashed #eee;
+            padding-top: 16px;
+        }
+
+        .template-author {
+            color: #999;
+            font-size: 13px;
+        }
+
+        .template-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-play {
+            background: #4ECDC4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-play:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-clone {
+            background: #FFE500;
+            color: #333;
+            border: 2px solid #333;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-clone:hover {
+            transform: scale(1.05);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+            font-size: 18px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .empty-state-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h2 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                padding: 60px 20px 40px;
+                border-radius: 0 0 30px 30px;
+            }
+            .page-header h1 {
+                font-size: 32px;
+            }
+            .page-content {
+                padding: 0 20px 60px;
+            }
+            .templates-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-header">
+        <h1>👥 <span>社区</span></h1>
+        <p>分享模板，Clone 收藏</p>
+    </div>
+
+    <div class="page-content">
+        <div class="community-actions">
+            <button class="btn-upload" onclick="showUploadModal()">📤 上传模板</button>
+        </div>
+
+        <div class="templates-grid" id="community-templates">
+            <p class="loading">加载中...</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="index.html">首页</a>
+            <a href="games.html">游戏</a>
+            <a href="tools.html">工具</a>
+            <a href="ai.html">AI助手</a>
+            <a href="resources.html">其他资源</a>
+            <a href="community.html">社区</a>
+        </div>
+        <p>&copy; 2024 Edu Toolbox. All rights reserved.</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/shared.js"></script>
+    <script src="js/community.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCommunityTemplates();
+        });
+    </script>
+</body>
+</html>
