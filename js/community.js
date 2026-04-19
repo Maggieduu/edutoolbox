@@ -124,9 +124,9 @@ async function cloneTemplate(docId) {
 
         if (countError) throw countError;
 
-        // 简单限制：免费用户最多5个模板
-        if (userTemplates && userTemplates.length >= 5) {
-            alert('免费用户最多保存5个模板，请升级或删除旧模板');
+        // 简单限制：免费用户最多3个模板
+        if (userTemplates && userTemplates.length >= 3) {
+            alert('免费用户最多保存3个模板，请升级或删除旧模板');
             return;
         }
 
