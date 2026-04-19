@@ -4,14 +4,14 @@
 
 // 模板数据结构
 const templateSchema = {
-    gameType: '',      // 游戏类型：gomoku, word-search, flashcards 等
-    title: '',         // 模板标题
-    description: '',   // 描述
-    content: {},       // 游戏内容（JSON格式）
-    author: '',        // 作者邮箱
-    authorName: '',    // 作者显示名
-    createdAt: null,   // 创建时间
-    playCount: 0       // 游玩次数
+    gameType: '',
+    title: '',
+    description: '',
+    content: {},
+    author: '',
+    authorName: '',
+    createdAt: null,
+    playCount: 0
 };
 
 // 加载社区模板
@@ -22,20 +22,21 @@ async function loadCommunityTemplates() {
     container.innerHTML = '<p class="loading">加载中...</p>';
 
     try {
-        const snapshot = await db.collection('templates')
-            .orderBy('createdAt', 'desc')
-            .limit(20)
-            .get();
+        const { data, error } = await window.sb.from('templates')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(20);
 
-        if (snapshot.empty) {
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
             container.innerHTML = '<p>暂无模板，成为第一个分享者！</p>';
             return;
         }
 
         container.innerHTML = '';
-        snapshot.forEach(doc => {
-            const template = doc.data();
-            const card = createTemplateCard(template, doc.id);
+        data.forEach(template => {
+            const card = createTemplateCard(template, template.id);
             container.appendChild(card);
         });
     } catch (error) {
@@ -60,13 +61,13 @@ function createTemplateCard(template, docId) {
 
     card.innerHTML = `
         <div class="template-header">
-            <span class="template-badge">${gameTypeLabels[template.gameType] || template.gameType}</span>
-            <span class="template-plays">${template.playCount || 0} 次游玩</span>
+            <span class="template-badge">${gameTypeLabels[template.game_type] || template.game_type}</span>
+            <span class="template-plays">${template.play_count || 0} 次游玩</span>
         </div>
         <h3 class="template-title">${template.title}</h3>
         <p class="template-desc">${template.description || '暂无描述'}</p>
         <div class="template-footer">
-            <span class="template-author">by ${template.authorName || template.author}</span>
+            <span class="template-author">by ${template.author_name || template.author}</span>
             <div class="template-actions">
                 <button class="btn-play" onclick="playTemplate('${docId}')">▶ 玩</button>
                 ${currentUser ? `<button class="btn-clone" onclick="cloneTemplate('${docId}')">📋 Clone</button>` : ''}
@@ -79,21 +80,18 @@ function createTemplateCard(template, docId) {
 // 玩游戏模板
 async function playTemplate(docId) {
     try {
-        const doc = await db.collection('templates').doc(docId).get();
-        if (!doc.exists) {
+        const { data, error } = await window.sb.from('templates').select('*').eq('id', docId).single();
+        if (error || !data) {
             alert('模板不存在');
             return;
         }
 
-        const template = doc.data();
+        const template = data;
 
         // 增加游玩次数
-        db.collection('templates').doc(docId).update({
-            playCount: firebase.firestore.FieldValue.increment(1)
-        });
+        await window.sb.from('templates').update({ play_count: (template.play_count || 0) + 1 }).eq('id', docId);
 
         // 根据游戏类型跳转到对应游戏
-        // 这里需要把模板内容传递到游戏中
         localStorage.setItem('currentTemplate', JSON.stringify(template));
         window.location.href = `play.html?src=./names/Name1/index.html&template=${docId}`;
 
@@ -111,34 +109,41 @@ async function cloneTemplate(docId) {
     }
 
     try {
-        const doc = await db.collection('templates').doc(docId).get();
-        if (!doc.exists) {
+        const { data, error } = await window.sb.from('templates').select('*').eq('id', docId).single();
+        if (error || !data) {
             alert('模板不存在');
             return;
         }
 
-        const template = doc.data();
+        const template = data;
 
         // 检查用户已有多少模板
-        const userTemplates = await db.collection('templates')
-            .where('author', '==', currentUser.email)
-            .get();
+        const { data: userTemplates, error: countError } = await window.sb.from('templates')
+            .select('id', { count: 'exact' })
+            .eq('author', currentUser.email);
+
+        if (countError) throw countError;
 
         // 简单限制：免费用户最多5个模板
-        if (userTemplates.size >= 5) {
+        if (userTemplates && userTemplates.length >= 5) {
             alert('免费用户最多保存5个模板，请升级或删除旧模板');
             return;
         }
 
         // 复制到用户
-        await db.collection('templates').add({
-            ...template,
+        const { error: insertError } = await window.sb.from('templates').insert({
+            game_type: template.game_type,
+            title: template.title,
+            description: template.description,
+            content: template.content,
             author: currentUser.email,
-            authorName: currentUser.email.split('@')[0],
-            createdAt: new Date(),
-            playCount: 0,
-            clonedFrom: docId
+            author_name: currentUser.email.split('@')[0],
+            created_at: new Date().toISOString(),
+            play_count: 0,
+            cloned_from: docId
         });
+
+        if (insertError) throw insertError;
 
         alert('已保存到你的收藏！');
 
@@ -152,7 +157,7 @@ async function cloneTemplate(docId) {
 function showUploadModal() {
     if (!currentUser) {
         alert('请先登录');
-        showLoginModal();
+        if (typeof showLoginModal === 'function') showLoginModal();
         return;
     }
 
@@ -214,16 +219,18 @@ async function uploadTemplate() {
     }
 
     try {
-        await db.collection('templates').add({
-            gameType,
-            title,
-            description,
-            content,
+        const { error } = await window.sb.from('templates').insert({
+            game_type: gameType,
+            title: title,
+            description: description,
+            content: content,
             author: currentUser.email,
-            authorName: currentUser.email.split('@')[0],
-            createdAt: new Date(),
-            playCount: 0
+            author_name: currentUser.email.split('@')[0],
+            created_at: new Date().toISOString(),
+            play_count: 0
         });
+
+        if (error) throw error;
 
         alert('发布成功！');
         loadCommunityTemplates();
