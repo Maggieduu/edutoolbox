@@ -1,5 +1,5 @@
 const supabaseUrl = 'https://oicvhrzqascurskwgirq.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pY3ZocnpxcXNjdXJza3dnOXFycSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQ1MTIwNzAwLCJleHAiOjE5NjA2OTY3MDB9.o4hy1zJmdsLZ6Yf0zLkmvqH8Z0Zgq9V4aAaH6P6N0Jk';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pY3ZocnpxYXNjdXJza3dnaXJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1ODQ0NDgsImV4cCI6MjA5MjE2MDQ0OH0.2BQcdjjyO2NmlElKOx27DBEVHtIHRNMa9h4SqxLFQlQ';
 
 window.sb = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
