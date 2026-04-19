@@ -177,7 +177,7 @@ function showUploadModal() {
             <form id="upload-form" class="p-6 space-y-4">
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">游戏类型</label>
-                    <select id="upload-game-type" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors bg-white">
+                    <select id="upload-game-type" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors bg-white" onchange="updateTemplateFields()">
                         <option value="">选择游戏类型</option>
                         <option value="gomoku">🎮 五子棋</option>
                         <option value="word-search">🔍 汉字大侦探</option>
@@ -194,9 +194,10 @@ function showUploadModal() {
                     <label class="block text-sm font-semibold text-gray-700 mb-2">描述</label>
                     <textarea id="upload-desc" placeholder="简要描述这个模板..." rows="2" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors resize-none"></textarea>
                 </div>
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">内容（JSON格式）</label>
-                    <textarea id="upload-content" placeholder='{"pairs": [["大","小"],["高","矮"]]}' required rows="4" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors resize-none font-mono text-sm"></textarea>
+                <div id="template-fields-container">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">词语（用逗号分隔）</label>
+                    <input type="text" id="upload-words" placeholder="例如：大,小,高,矮,胖,瘦" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors">
+                    <p class="text-xs text-gray-500 mt-1">输入用于游戏的词语，用逗号分隔</p>
                 </div>
                 <button type="submit" class="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold py-3 px-6 rounded-xl hover:from-orange-600 hover:to-pink-600 transform hover:-translate-y-0.5 transition-all shadow-lg">
                     🚀 发布模板
@@ -217,18 +218,45 @@ function showUploadModal() {
     };
 }
 
+function updateTemplateFields() {
+    const gameType = document.getElementById('upload-game-type').value;
+    const container = document.getElementById('template-fields-container');
+    
+    const fieldConfigs = {
+        'gomoku': { label: '词语（用逗号分隔）', placeholder: '例如：同,学,习,游,戏', hint: '输入成对的词语用于五子棋' },
+        'word-search': { label: '词语（用逗号分隔）', placeholder: '例如：北京,上海,广州,深圳', hint: '输入要在汉字大侦探中隐藏的词语' },
+        'flashcards': { label: '词语对（用逗号分隔，每对用/分隔）', placeholder: '例如：大/小,高/矮,胖/瘦', hint: '输入成对的词语/解释' },
+        'scrambled': { label: '句子（每行一句）', placeholder: '例如：今天天气真好\n明天可能会下雨', hint: '输入完整的句子' },
+        'name-picker': { label: '名字（用逗号分隔）', placeholder: '例如：张三,李四,王五,赵六', hint: '输入要随机点名的名字' }
+    };
+    
+    const config = fieldConfigs[gameType] || { label: '内容', placeholder: '请输入内容', hint: '' };
+    container.innerHTML = `
+        <label class="block text-sm font-semibold text-gray-700 mb-2">${config.label}</label>
+        <textarea id="upload-words" placeholder="${config.placeholder}" required rows="3" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors resize-none"></textarea>
+        <p class="text-xs text-gray-500 mt-1">${config.hint}</p>
+    `;
+}
+
 // 上传模板到数据库
 async function uploadTemplate() {
     const gameType = document.getElementById('upload-game-type').value;
     const title = document.getElementById('upload-title').value;
     const description = document.getElementById('upload-desc').value;
-    const contentStr = document.getElementById('upload-content').value;
+    const wordsInput = document.getElementById('upload-words').value;
 
     let content;
     try {
-        content = JSON.parse(contentStr);
+        if (gameType === 'flashcards') {
+            const pairs = wordsInput.split(',').map(pair => pair.trim().split('/').map(s => s.trim()));
+            content = { pairs: pairs };
+        } else if (gameType === 'scrambled') {
+            content = { sentences: wordsInput.split('\n').map(s => s.trim()).filter(s => s) };
+        } else {
+            content = { words: wordsInput.split(',').map(w => w.trim()).filter(w => w) };
+        }
     } catch (e) {
-        alert('JSON格式错误');
+        alert('格式错误');
         return;
     }
 
