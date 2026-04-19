@@ -1,8 +1,7 @@
 const supabaseUrl = 'https://oicvhrzqascurskwgirq.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pY3ZocnpxcXNjdXJza3dnOXFycSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQ1MTIwNzAwLCJleHAiOjE5NjA2OTY3MDB9.o4hy1zJmdsLZ6Yf0zLkmvqH8Z0Zgq9V4aAaH6P6N0Jk';
 
-const { createClient } = window.supabase;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+window.sb = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
 let currentUser = null;
 
@@ -61,7 +60,7 @@ async function handleLogin() {
     const errorEl = document.getElementById('loginError');
     errorEl.textContent = '';
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await window.sb.auth.signInWithPassword({
         email: email,
         password: password
     });
@@ -81,7 +80,7 @@ async function handleRegister() {
     const errorEl = document.getElementById('registerError');
     errorEl.textContent = '';
 
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await window.sb.auth.signUp({
         email: email,
         password: password
     });
@@ -91,7 +90,7 @@ async function handleRegister() {
     } else {
         currentUser = data.user;
         if (data.user) {
-            const { error: dbError } = await supabase.from('users').insert({
+            const { error: dbError } = await window.sb.from('users').insert({
                 id: data.user.id,
                 email: data.user.email,
                 created_at: new Date().toISOString()
@@ -113,7 +112,7 @@ function updateLoginButton() {
     }
 }
 
-supabase.auth.onAuthStateChange((event, session) => {
+window.sb.auth.onAuthStateChange((event, session) => {
     currentUser = session?.user || null;
     updateLoginButton();
 });
