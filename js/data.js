@@ -11,7 +11,7 @@ const SITE_DATA = {
         { name: '工具', nameEn: 'Tools', link: 'tools.html', active: false },
         { name: 'AI助手', nameEn: 'AI', link: 'ai.html', active: false },
         { name: '其他资源', nameEn: 'Resources', link: 'resources.html', active: false },
-        { name: '社区', nameEn: 'Community', link: '#', commingSoon: true }
+        { name: '社区', nameEn: 'Community', link: 'community.html', commingSoon: false }
     ],
 
     // Translations
