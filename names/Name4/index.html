@@ -132,9 +132,41 @@
         }
         #sidebar-overlay.opacity-100 { opacity: 1; }
         #sidebar-overlay.opacity-0 { opacity: 0; }
+    /* 返回按钮 */
+    .back-btn {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        background: white;
+        padding: 10px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        text-decoration: none;
+        color: #555;
+        font-weight: 600;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+    }
+    .back-btn:hover {
+        background: #f0f0f0;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    @media (max-width: 540px) {
+        .back-btn {
+            padding: 8px 14px;
+            font-size: 13px;
+        }
+    }
     </style>
 </head>
 <body class="min-h-screen">
+
+    <!-- 返回按钮 -->
+    <a href="javascript:history.back()" class="back-btn">← 返回</a>
 
     <!-- 侧边栏切换按钮 -->
     <button id="toggle-sidebar" onclick="toggleSidebar()" class="fixed top-4 right-4 bg-pink-500 text-white px-4 py-2 rounded-xl shadow-lg hover:bg-pink-600 z-[10000] cursor-pointer border-none transition-all duration-200 font-semibold flex items-center gap-2" style="font-family: 'Baloo 2', cursive;">
