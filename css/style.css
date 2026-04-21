@@ -1250,6 +1250,13 @@ body {
     text-align: center;
 }
 
+.success-text {
+    color: #22c55e;
+    margin-top: 10px;
+    font-size: 14px;
+    text-align: center;
+}
+
 /* ========================================
    Responsive
    ======================================== */

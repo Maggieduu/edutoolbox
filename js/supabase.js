@@ -24,6 +24,7 @@ function openLoginModal() {
                     <p id="loginError" class="error-text"></p>
                 </div>
                 <div id="registerForm" style="display: none;">
+                    <input type="text" id="registerName" placeholder="名字">
                     <input type="email" id="registerEmail" placeholder="邮箱">
                     <input type="password" id="registerPassword" placeholder="密码（至少6位）">
                     <button onclick="handleRegister()" class="auth-submit">注册</button>
@@ -75,14 +76,25 @@ async function handleLogin() {
 }
 
 async function handleRegister() {
+    const name = document.getElementById('registerName').value;
     const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
     const errorEl = document.getElementById('registerError');
     errorEl.textContent = '';
 
+    if (!name) {
+        errorEl.textContent = '请输入名字';
+        return;
+    }
+
     const { data, error } = await window.sb.auth.signUp({
         email: email,
-        password: password
+        password: password,
+        options: {
+            data: {
+                name: name
+            }
+        }
     });
 
     if (error) {
@@ -94,11 +106,72 @@ async function handleRegister() {
     }
 }
 
+function openProfileModal() {
+    closeUserMenu();
+    const existingModal = document.getElementById('profileModal');
+    if (existingModal) existingModal.remove();
+
+    const userName = currentUser.user_metadata?.name || '';
+
+    const modalHtml = `
+        <div id="profileModal" class="modal-overlay">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeProfileModal()">&times;</button>
+                <h2 style="margin-bottom: 20px; font-size: 24px; font-weight: bold;">My Profile</h2>
+                <div id="profileForm">
+                    <input type="text" id="profileName" placeholder="名字" value="${userName}">
+                    <input type="email" id="profileEmail" placeholder="邮箱" value="${currentUser.email}" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
+                    <button onclick="handleProfileUpdate()" class="auth-submit">保存修改</button>
+                    <p id="profileError" class="error-text"></p>
+                    <p id="profileSuccess" class="success-text" style="display: none;"></p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function closeProfileModal() {
+    const modal = document.getElementById('profileModal');
+    if (modal) modal.remove();
+}
+
+async function handleProfileUpdate() {
+    const name = document.getElementById('profileName').value;
+    const errorEl = document.getElementById('profileError');
+    const successEl = document.getElementById('profileSuccess');
+    errorEl.textContent = '';
+    successEl.style.display = 'none';
+
+    if (!name) {
+        errorEl.textContent = '请输入名字';
+        return;
+    }
+
+    const { data, error } = await window.sb.auth.updateUser({
+        data: { name: name }
+    });
+
+    if (error) {
+        errorEl.textContent = '更新失败：' + error.message;
+    } else {
+        currentUser = data.user;
+        updateLoginButton();
+        successEl.textContent = '修改成功！';
+        successEl.style.display = 'block';
+        setTimeout(() => {
+            closeProfileModal();
+        }, 1500);
+    }
+}
+
 function updateLoginButton() {
     const loginBtn = document.querySelector('.login-btn');
     if (loginBtn) {
         if (currentUser) {
-            loginBtn.textContent = currentUser.email.split('@')[0];
+            const userName = currentUser.user_metadata?.name || currentUser.email.split('@')[0];
+            loginBtn.textContent = userName;
             loginBtn.onclick = toggleUserMenu;
         } else {
             loginBtn.textContent = '注册/登录';
@@ -120,11 +193,21 @@ function toggleUserMenu(e) {
     menu.className = 'fixed bg-white rounded-xl shadow-xl border border-gray-200 py-2 min-w-[200px] z-50';
     menu.style.top = '70px';
     menu.style.right = '20px';
+    const userName = currentUser.user_metadata?.name || currentUser.email.split('@')[0];
     menu.innerHTML = `
         <div class="px-4 py-2 border-b border-gray-100">
             <p class="text-xs text-gray-500 mb-1">已登录</p>
-            <p class="font-semibold text-gray-800 truncate">${currentUser.email}</p>
+            <p class="font-semibold text-gray-800 truncate">${userName}</p>
         </div>
+        <a href="#" onclick="openProfileModal(); return false;" class="block px-5 py-3 hover:bg-purple-50 text-gray-700 transition-colors">
+            <span class="flex items-center gap-3">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9333EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                My Profile
+            </span>
+        </a>
         <a href="my-uploads.html" class="block px-5 py-3 hover:bg-blue-50 text-gray-700 transition-colors">
             <span class="flex items-center gap-3">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
